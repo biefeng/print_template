@@ -1,5 +1,7 @@
 <template>
   <div id="app">
+    <h3>模板生成</h3>
+
     <el-select v-model="contentType" clearable placeholder="请选择">
       <el-option
         v-for="item in options"
@@ -8,9 +10,11 @@
         :value="item.value">
       </el-option>
     </el-select>
-    <h3>模板生成</h3>
+    <div id="templateArea" style="position: absolute;left:800px;width: 450px;height: 600px;border: 1px solid red;">
+      <img id="dragImage" style="left: 100px;position: absolute" @dragstart="ondragstart" @drag="ondrag"
+           @dragend="ondragend" src="./assets/logo.png" alt=""/>
+    </div>
 
-    <img id="dragImage" @dragstart="ondragstart" @drag="ondrag" @dragend="ondragend" src="./assets/logo.png" alt=""/>
   </div>
 </template>
 
@@ -36,7 +40,7 @@
           label: '图片'
         }],
         contentType: '',
-        'dragImage':{}
+        'dragImage': {}
       }
     },
     mounted() {
@@ -52,22 +56,30 @@
         this.dragImage.offsetX = e.offsetX;
         this.dragImage.offsetY = e.offsetY;
       },
-      ondrag(e){
+      ondrag(e) {
         console.log('事件源p3拖动中');
-        var x= e.pageX;
-        var y= e.pageY;
-        console.log(x+'-'+y);
+        let templateAreaDiv = document.getElementById("templateArea");
+        var x = e.pageX;
+        var y = e.pageY;
+        console.log(x + '-' + y);
         //drag事件最后一刻，无法读取鼠标的坐标，pageX和pageY都变为0
-        if(x==0 && y==0){
+        if (x == 0 && y == 0) {
           return; //不处理拖动最后一刻X和Y都为0的情形
         }
-        x-=this.dragImage.offsetX;
-        y-=this.dragImage.offsetY;
+        const offsetLeft= templateAreaDiv.offsetLeft
+        const offsetTop=templateAreaDiv.offsetTop
+        x =x- this.dragImage.offsetX-offsetLeft;
+        if (x<0)
+          x=0
+        y =y- this.dragImage.offsetY-offsetTop;
+        if(y<0)
+          y=0
 
-        document.getElementById("dragImage").style.left=x+'px';
-        document.getElementById("dragImage").style.top=y+'px';
+        let dragImageDiv = document.getElementById("dragImage");
+        dragImageDiv.style.left = x + 'px';
+        dragImageDiv.style.top = y + 'px';
       },
-      ondragend(){
+      ondragend() {
         console.log('源对象p3拖动结束');
       }
     }
@@ -79,7 +91,7 @@
     font-family: 'Avenir', Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    text-align: center;
+    #text-align: center;
     color: #2c3e50;
     margin-top: 60px;
   }
