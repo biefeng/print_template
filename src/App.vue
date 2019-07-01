@@ -2,14 +2,14 @@
   <div id="app">
 
     <ul id="editMenu" v-show="this.attachEle">
-      <li v-show="this.contentType==='text'">编辑字体</li>
+      <li v-show="this.contentType==='text'" @click="centerDialogVisible=true">编辑字体</li>
       <li v-show="this.contentType==='qrCode'">编辑大小</li>
     </ul>
     <h3>模板生成</h3>
 
     <el-select v-model="contentType" clearable placeholder="文本">
       <el-option
-        v-for="item in options"
+        v-for="item in contentTypeSelect"
         :key="item.value"
         :label="item.label"
         :value="item.value">
@@ -25,6 +25,54 @@
       <!--<div id="dragImage" style="left: 100px;position: absolute" @click="selectedElement" alt="">First</div>-->
     </div>
 
+    <el-dialog
+      title="提示"
+      :visible.sync="centerDialogVisible"
+      width="30%"
+      center>
+      <span><p style="display: inline;font-size: 20px;margin-right: 10px">字体</p><el-select
+        style="width:120px;margin-right: 20px"
+        v-model="fontType"
+        placeholder="请选择">
+        <el-option
+          v-for="item in fontTypeSelect"
+          :key="item.value"
+          :label="item.label"
+          :value="item.value">
+        </el-option>
+      </el-select></span>
+
+      <span><p style="display: inline;font-size: 20px;margin-right: 10px">宽</p><el-select
+        style="width:120px;margin-right: 20px"
+        v-model="fontType"
+        placeholder="请选择">
+        <el-option
+          v-for="item in fontTypeSelect"
+          :key="item.value"
+          :label="item.label"
+          :value="item.value">
+        </el-option>
+      </el-select></span>
+
+      <span><p style="display: inline;font-size: 20px;margin-right: 10px">高</p><el-select v-model="fontType"
+                                                                                          style="width:120px;margin-right: 20px"
+                                                                                          placeholder="请选择">
+        <el-option
+          v-for="item in fontTypeSelect"
+          :key="item.value"
+          :label="item.label"
+          :value="item.value">
+        </el-option>
+      </el-select></span>
+      <span style="display: block"><p style="display: inline;font-size: 20px;margin-right: 20px">键</p><el-input
+        v-model="valueName" :label="'键'" style="width: 120px"
+        placeholder="请输入内容"></el-input></span>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="closeDialog('cancel')">取 消</el-button>
+        <el-button type="primary" @click="closeDialog('apply')">确 定</el-button>
+      </span>
+    </el-dialog>
+
   </div>
 </template>
 
@@ -37,7 +85,8 @@
     name: 'App',
     data() {
       return {
-        options: [{
+        centerDialogVisible: false,
+        contentTypeSelect: [{
           value: 'text',
           label: '文本'
         }, {
@@ -51,9 +100,24 @@
           label: '图片'
         }],
         contentType: 'text',
+        fontTypeSelect: [{
+          value: 'text',
+          label: 'FONT-1'
+        }, {
+          value: 'qrCode',
+          label: 'FONT-2'
+        }, {
+          value: 'barCode',
+          label: 'FONT-3'
+        }, {
+          value: 'img',
+          label: 'FONT-4'
+        }],
+        fontType: 'FONT-1',
         'selectedEle': {},
         "addedEle": [],
-        "attachEle": undefined
+        "attachEle": undefined,
+        valueName: ''
       }
     },
     mounted() {
@@ -129,7 +193,7 @@
             childElement.addEventListener("click", this.selectedElement, true)
             childElement.setAttribute("type", "text")
             childElement.addEventListener("contextmenu", this.popMenu)
-            childElement.style = "position: absolute;top:100px;cursor:default"
+            childElement.style = "position: absolute;top:100px;cursor:default;font-weight:bolder;border:1px solid gray;text-align:center;vertical-align:center;font-size:20px;padding:0px 10px"
             break;
           case 'qrCode':
             childElement = document.createElement("div");
@@ -162,12 +226,15 @@
           let tmp = {}
           tmp.left = item.offsetLeft
           tmp.top = item.offsetTop
+          tmp.valueName = item.valueName
+          tmp.fontType = item.fontType
           switch (contentType) {
             case "text":
               this.addedEle.push(tmp)
               break
           }
         })
+        console.log(this.addedEle)
       },
       popMenu(e) {
         var event = e || window.event
@@ -194,13 +261,28 @@
         let editMenuUl = document.getElementById("editMenu");
         this.attachEle = undefined
         document.removeEventListener("click", this.closeMenu, false)
-
+      },
+      closeDialog(flag) {
+        this.centerDialogVisible = false
+        if (flag && flag === 'apply') {
+          let selected = document.getElementsByClassName("selected")[0];
+          selected.style.fontSize = "50px"
+          selected.valueName = this.valueName
+          selected.fontType = this.fontType
+          this.valueName = undefined
+          this.fontType = undefined
+        }
       }
     }
   }
 </script>
 
 <style>
+
+  body {
+    z-index: -1;
+  }
+
   #app {
     font-family: 'Avenir', Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
@@ -208,6 +290,7 @@
     #text-align: center;
     color: #2c3e50;
     margin-top: 60px;
+    height: 800px;
   }
 
   .selected {
@@ -216,9 +299,14 @@
   }
 
   #editMenu {
+    z-index: 100;
     padding-left: 10px;
     padding-right: 10px;
+    cursor: default;
   }
 
+  #editMenu li:hover {
+    background-color: red;
+  }
 
 </style>
