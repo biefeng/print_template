@@ -10,10 +10,13 @@
         :value="item.value">
       </el-option>
     </el-select>
-    <el-button type="primary" @click="appendElement">主要按钮</el-button>
+    <el-button type="primary" @click="appendElement">添加元素</el-button>
+    <el-button type="primary" @click="submitTemplate">生成模板</el-button>
     <div id="templateArea" style="position: absolute;left:800px;width: 450px;height: 600px;border: 1px solid red;">
-      <img id="dragImage" style="left: 100px;position: absolute" @dragstart="ondragstart" @drag="ondrag"
-           @dragend="ondragend" src="./assets/logo.png" alt=""/>
+      <!--<img id="dragImage" style="left: 100px;position: absolute" @dragstart="ondragstart" @drag="ondrag" @click="selectedElement"
+           @dragend="ondragend" src="./assets/logo.png" alt=""/>-->
+
+      <!--<div id="dragImage" style="left: 100px;position: absolute" @click="selectedElement" alt="">First</div>-->
     </div>
 
   </div>
@@ -41,7 +44,7 @@
           label: '图片'
         }],
         contentType: '',
-        'dragImage': {}
+        'selectedEle': {}
       }
     },
     mounted() {
@@ -52,10 +55,10 @@
     },
     methods: {
       ondragstart(e) {
-        alert(1)
+        console.log("dragStart")
         //记录刚一拖动时，鼠标在飞机上的偏移量
-        this.dragImage.offsetX = e.offsetX;
-        this.dragImage.offsetY = e.offsetY;
+        this.selectedEle.offsetX = e.offsetX;
+        this.selectedEle.offsetY = e.offsetY;
       },
       ondrag(e) {
         let templateAreaDiv = document.getElementById("templateArea");
@@ -67,13 +70,13 @@
         }
         const leftBoundary = templateAreaDiv.offsetLeft
         const topBoundary = templateAreaDiv.offsetTop
-        x = x - this.dragImage.offsetX - leftBoundary;
+        x = x - this.selectedEle.offsetX - leftBoundary;
         if (x < 0)
           x = 0
-        y = y - this.dragImage.offsetY - topBoundary;
+        y = y - this.selectedEle.offsetY - topBoundary;
         if (y < 0)
           y = 0
-        let dragImageDiv = document.getElementById("dragImage");
+        let dragImageDiv = e.currentTarget;
         if (y > templateAreaDiv.offsetHeight - dragImageDiv.offsetHeight) {
           y = templateAreaDiv.offsetHeight - dragImageDiv.offsetHeight
         }
@@ -86,6 +89,26 @@
       ondragend() {
 
       },
+      selectedElement(e) {
+        let htmlCollection = document.getElementsByClassName("selected");
+        let preSelected = htmlCollection[0]
+        let selected = e.currentTarget
+        if (htmlCollection && htmlCollection.length > 0 && selected != preSelected) {
+          let classList = preSelected.classList;
+          preSelected.removeEventListener("dragstart", this.ondragstart, true)
+          preSelected.removeEventListener("drag", this.ondrag, true)
+          classList.remove("selected")
+        }
+        selected.addEventListener("drag", this.ondrag, true)
+        selected.addEventListener("dragstart", this.ondragstart, true)
+        console.log(e)
+
+        let tmp = selected.style
+        //selected.style=tmp.cssText+";border:1px solid red"
+        //tmp.zIndex=99
+        //tmp.border="1px solid red"
+        selected.className = "selected"
+      },
       appendElement() {
         if (!this.contentType || this.contentType === '') {
           this.$message.warning("请选择一种类型")
@@ -95,12 +118,19 @@
         let childElement
         switch (this.contentType) {
           case "text":
-            childElement = document.createElement("p", {type: "",ondragstart:this.ondragstart});
-            childElement.textContent="你好"
-            childElement.ondragstart=this.ondragstart
+            childElement = document.createElement("div", {type: "", ondragstart: this.ondragstart});
+            childElement.textContent = "你好"
+            /*childElement.ondragstart=this.ondragstart
+            childElement.ondrag=this.ondrag
+            childElement.onclick=this.selectedElement*/
+            childElement.addEventListener("click", this.selectedElement, true)
+            childElement.style = "position: absolute;top:100px;cursor:default"
             break;
         }
         templateAreaDiv.appendChild(childElement)
+      },
+      submitTemplate() {
+
       }
     }
   }
@@ -114,5 +144,10 @@
     #text-align: center;
     color: #2c3e50;
     margin-top: 60px;
+  }
+
+  .selected {
+    border: 1px solid red;
+    z-index: 99;
   }
 </style>
