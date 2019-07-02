@@ -1,0 +1,15 @@
+import axios from 'axios'
+
+axios.defaults.withCredentials = true
+const fetchUtil = axios.create({
+  baseURL: 'http://localhost:9999/'
+})
+
+fetchUtil.interceptors.request.use(function (config) {
+  return config;
+}, function (error) {
+  return Promise.reject(error);
+});
+
+
+export default fetchUtil

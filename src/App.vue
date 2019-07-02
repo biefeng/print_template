@@ -1,12 +1,26 @@
 <template>
   <div id="app">
-
     <ul id="editMenu" v-show="this.attachEle">
-      <li v-show="this.contentType==='text'" @click="centerDialogVisible=true">编辑字体</li>
-      <li v-show="this.contentType==='qrCode'">编辑大小</li>
+      <li v-show="this.contentType==='text'" @click="openDialog">编辑</li>
+      <li v-show="this.contentType==='barCode'" @click="openDialog">编辑条形码</li>
     </ul>
-    <h3>模板生成</h3>
-
+    <el-button type="primary" @click="editTemplateDialogVisible =true">编辑模板区域</el-button>
+    <el-dialog
+      title="提示"
+      :visible.sync="editTemplateDialogVisible"
+      width="30%"
+      center>
+      <span style="display: block;margin-bottom: 10px"><p style="display: inline;margin-right: 20px">宽度</p><el-input
+        style="width: 300px" v-model="printAreaWidth" placeholder="打印区域宽度"></el-input></span>
+      <span style="display: block"><p style="display: inline;margin-right: 20px">高度</p><el-input style="width: 300px"
+                                                                                                 v-model="printAreaHeight"
+                                                                                                 placeholder="打印区域高度"></el-input></span>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="editTemplateDialogVisible = false">取 消</el-button>
+        <el-button type="primary" @click="closeEditTemplateDialog">确 定</el-button>
+      </span>
+    </el-dialog>
+    <br/>
     <el-select v-model="contentType" clearable placeholder="文本">
       <el-option
         v-for="item in contentTypeSelect"
@@ -18,7 +32,7 @@
     <el-button type="primary" @click="appendElement">添加元素</el-button>
     <el-button type="primary" @click="deleteElement">删除元素</el-button>
     <el-button type="primary" @click="submitTemplate">生成模板</el-button>
-    <div id="templateArea" style="position: absolute;left:800px;width: 450px;height: 600px;border: 1px solid red;">
+    <div id="templateArea" style="position: absolute;left:800px;width: 450px;height: 220px;border: 1px solid red;">
       <!--<img id="dragImage" style="left: 100px;position: absolute" @dragstart="ondragstart" @drag="ondrag" @click="selectedElement"
            @dragend="ondragend" src="./assets/logo.png" alt=""/>-->
 
@@ -26,12 +40,48 @@
     </div>
 
     <el-dialog
-      title="提示"
+      title="编辑格式"
       :visible.sync="centerDialogVisible"
       width="30%"
       center>
-      <span><p style="display: inline;font-size: 20px;margin-right: 10px">字体</p><el-select
+      <span v-show="this.contentType==='text'" style="display: block">
+        <span style="display: inline-block;font-size: 20px;margin-left: 20px;width: 80px;">字宽：</span><el-select
+        style="width:120px;margin-left: 0px"
+        v-model="fontWidth"
+        placeholder="请选择">
+        <el-option
+          v-for="item in fontWidthSelect"
+          :key="item.value"
+          :label="item.label"
+          :value="item.value">
+        </el-option>
+      </el-select>
+      <span
+        style="display: inline-block;font-size: 20px;margin-left: 20px;width: 80px;">字高</span><el-select
+        v-model="fontHeight"
         style="width:120px;margin-right: 20px"
+        placeholder="请选择">
+        <el-option
+          v-for="item in fontHeightSelect"
+          :key="item.value"
+          :label="item.label"
+          :value="item.value">
+        </el-option>
+      </el-select>
+      </span>
+
+      <span  style="display: block;margin-top: 10px;">
+        <span style="display: inline-block;font-size: 20px;margin-left: 20px;width: 80px;">键</span><el-input
+        v-model="valueName" style="width: 120px;margin-left: 0px"
+        placeholder="请输入内容"></el-input>
+      <span
+        style="display: inline-block;font-size: 20px;margin-left: 20px;width: 80px;">值</span><el-input
+        v-model="textExampleData" style="width: 120px;margin-left: 0px"
+        placeholder="请输入内容"></el-input>
+      </span>
+      <span v-show="contentType==='text'" style="display: block;margin-top: 10px;">
+      <span style="display: inline-block;font-size: 20px;margin-left: 20px;width: 80px;">字体</span><el-select
+        style="width:120px;margin-left: 0px"
         v-model="fontType"
         placeholder="请选择">
         <el-option
@@ -40,45 +90,36 @@
           :label="item.label"
           :value="item.value">
         </el-option>
-      </el-select></span>
-
-      <span><p style="display: inline;font-size: 20px;margin-right: 10px">宽</p><el-select
+      </el-select>
+      </span>
+      <span v-show="this.contentType==='barCode'" style="display: block;margin-top: 10px;"><span
+        style="display: inline-block;font-size: 20px;margin-right: 10px;width: 80px;">线条宽度</span><el-select
+        v-model="fontHeight"
         style="width:120px;margin-right: 20px"
-        v-model="fontType"
         placeholder="请选择">
         <el-option
-          v-for="item in fontTypeSelect"
+          v-for="item in fontHeightSelect"
           :key="item.value"
           :label="item.label"
           :value="item.value">
         </el-option>
-      </el-select></span>
-
-      <span><p style="display: inline;font-size: 20px;margin-right: 10px">高</p><el-select v-model="fontType"
-                                                                                          style="width:120px;margin-right: 20px"
-                                                                                          placeholder="请选择">
-        <el-option
-          v-for="item in fontTypeSelect"
-          :key="item.value"
-          :label="item.label"
-          :value="item.value">
-        </el-option>
-      </el-select></span>
-      <span style="display: block"><p style="display: inline;font-size: 20px;margin-right: 20px">键</p><el-input
-        v-model="valueName" :label="'键'" style="width: 120px"
+      </el-select><span style="display: inline-block;font-size: 20px;margin-left: 5px;width: 80px;">条码高度</span><el-input
+        v-model="valueName" style="width: 120px;margin-left: 10px"
         placeholder="请输入内容"></el-input></span>
+
+
       <span slot="footer" class="dialog-footer">
         <el-button @click="closeDialog('cancel')">取 消</el-button>
         <el-button type="primary" @click="closeDialog('apply')">确 定</el-button>
       </span>
     </el-dialog>
-
   </div>
 </template>
 
 <script>
   import draggable from 'vuedraggable'
   import index from "./router";
+  import JsBarCode from 'jsbarcode'
 
   export default {
     "components": {draggable},
@@ -86,6 +127,8 @@
     data() {
       return {
         centerDialogVisible: false,
+        editTemplateDialogVisible: false,
+        editBarCodeDialogVisible: false,
         contentTypeSelect: [{
           value: 'text',
           label: '文本'
@@ -117,11 +160,51 @@
         'selectedEle': {},
         "addedEle": [],
         "attachEle": undefined,
-        valueName: ''
+        valueName: '',
+        textExampleData: '',
+        fontWidthSelect: [{
+          value: '0',
+          label: '0'
+        }, {
+          value: '1',
+          label: '1'
+        }, {
+          value: '2',
+          label: '2'
+        }, {
+          value: '3',
+          label: '3'
+        }, {
+          value: '4',
+          label: '4'
+        }],
+        fontWidth: "0",
+        fontHeightSelect: [{
+          value: '0',
+          label: '0'
+        }, {
+          value: '1',
+          label: '1'
+        }, {
+          value: '2',
+          label: '2'
+        }, {
+          value: '3',
+          label: '3'
+        }, {
+          value: '4',
+          label: '4'
+        }],
+        fontHeight: "0",
+        printAreaWidth: 450,
+        printAreaHeight: 600
       }
     },
     mounted() {
-
+      let templateAreaDiv = document.getElementById("templateArea");
+      console.log(templateAreaDiv)
+      templateAreaDiv.style.width = this.printAreaWidth + 'px'
+      templateAreaDiv.style.height = this.printAreaHeight + 'px'
     },
     created() {
 
@@ -162,19 +245,19 @@
 
       },
       selectedElement(e) {
-        let htmlCollection = document.getElementsByClassName("selected");
+        let htmlCollection = document.getElementsByClassName("selectedEle");
         let preSelected = htmlCollection[0]
         let selected = e.currentTarget
         if (htmlCollection && htmlCollection.length > 0 && selected != preSelected) {
           let classList = preSelected.classList;
           preSelected.removeEventListener("dragstart", this.ondragstart, true)
           preSelected.removeEventListener("drag", this.ondrag, true)
-          classList.remove("selected")
+          classList.remove("selectedEle")
         }
         selected.addEventListener("drag", this.ondrag, true)
         selected.addEventListener("dragstart", this.ondragstart, true)
         let tmp = selected.style
-        selected.className = "selected"
+        selected.className = "selectedEle"
       },
       appendElement() {
         if (!this.contentType || this.contentType === '') {
@@ -193,25 +276,39 @@
             childElement.addEventListener("click", this.selectedElement, true)
             childElement.setAttribute("type", "text")
             childElement.addEventListener("contextmenu", this.popMenu)
-            childElement.style = "position: absolute;top:100px;cursor:default;font-weight:bolder;border:1px solid gray;text-align:center;vertical-align:center;font-size:20px;padding:0px 10px"
+            childElement.style = "position: absolute;top:100px;cursor:default;font-weight:bolder;border:1px solid gray;text-align:center;vertical-align:center;font-size:13px;padding:0px 10px"
             break;
-          case 'qrCode':
-            childElement = document.createElement("div");
-            childElement.textContent = "二维码"
+          case 'barCode':
+            childElement = document.createElement("img");
+            //childElement.textContent = "条形码"
             /*childElement.ondragstart=this.ondragstart
             childElement.ondrag=this.ondrag
             childElement.onclick=this.selectedElement*/
+            childElement.classList.add("barCodeEle")
+            childElement.classList.add("barCodeEle1")
+
             childElement.addEventListener("click", this.selectedElement, true)
-            childElement.setAttribute("type", "qrCode")
+            childElement.setAttribute("type", "barCode")
             childElement.addEventListener("contextmenu", this.popMenu)
             childElement.style = "position: absolute;top:100px;cursor:default"
             break;
         }
         templateAreaDiv.appendChild(childElement)
+        JsBarCode(".barCodeEle", "1234", {
+          format: "pharmacode",
+          lineColor: "#0aa",
+          width: 4,
+          height: 40,
+          displayValue: true
+        })
       },
       deleteElement() {
         let templateAreaDiv = document.getElementById("templateArea")
-        let htmlCollection = document.getElementsByClassName("selected");
+        let htmlCollection = document.getElementsByClassName("selectedEle");
+        if (htmlCollection.length == 0) {
+          this.$message.warning("删除需要选定一个元素")
+          return
+        }
         let selected = htmlCollection[0]
         if (this.attachEle == selected) {
           this.attachEle = undefined
@@ -221,19 +318,38 @@
       submitTemplate() {
         let templateAreaDiv = document.getElementById("templateArea");
         this.addedEle = []
+
         templateAreaDiv.childNodes.forEach((item, index) => {
           let contentType = item.getAttribute("type")
           let tmp = {}
           tmp.left = item.offsetLeft
           tmp.top = item.offsetTop
+          tmp.type = contentType
           tmp.valueName = item.valueName
-          tmp.fontType = item.fontType
+
           switch (contentType) {
             case "text":
+              tmp.fontType = item.fontType
+              tmp.fontWidth = item.fontWidth
+              tmp.fontHeight = item.fontHeight
               this.addedEle.push(tmp)
               break
           }
         })
+        this.$http.post("http://localhost:7538/template/add", {
+          "elements": this.addedEle,
+          "printWidth": templateAreaDiv.clientWidth,
+          "printHeight": templateAreaDiv.clientHeight,
+          "templateName": "template1"
+        }, {
+          headers: {
+            post: {
+              'Content-Type': 'application/json'
+            }
+          }
+        }).then(
+          console.log("请求成功")
+        )
         console.log(this.addedEle)
       },
       popMenu(e) {
@@ -254,7 +370,6 @@
           editMenuUl.style.border = "1px solid black"
           document.addEventListener("click", this.closeMenu, false)
           this.selectedElement(event)
-
         }
       },
       closeMenu(e) {
@@ -262,16 +377,46 @@
         this.attachEle = undefined
         document.removeEventListener("click", this.closeMenu, false)
       },
+      openDialog() {
+        this.centerDialogVisible = true
+        let selected = document.getElementsByClassName("selectedEle")[0];
+        switch (this.contentType) {
+          case 'text':
+            this.valueName = selected.valueName
+            this.textExampleData = selected.innerText
+            this.fontHeight = selected.fontHeight
+            this.fontWidth = selected.fontWidth
+            break
+        }
+      },
       closeDialog(flag) {
         this.centerDialogVisible = false
         if (flag && flag === 'apply') {
-          let selected = document.getElementsByClassName("selected")[0];
-          selected.style.fontSize = "50px"
+          let selected = document.getElementsByClassName("selectedEle")[0];
+          //selected.style.fontSize = "50px"
           selected.valueName = this.valueName
           selected.fontType = this.fontType
+          selected.fontWidth = this.fontWidth
+          selected.fontHeight = this.fontHeight
+          selected.innerText = this.textExampleData
           this.valueName = undefined
           this.fontType = undefined
+          this.fontWidth = undefined
+          this.fontHeight = undefined
+          this.textExampleData = undefined
         }
+      },
+      closeEditTemplateDialog() {
+        this.editTemplateDialogVisible = false
+        let templateAreaDiv = document.getElementById("templateArea");
+        templateAreaDiv.style.width = this.printAreaWidth + 'px'
+        templateAreaDiv.style.height = this.printAreaHeight + 'px'
+      },
+      openEditBarCodeDialog() {
+        this.editBarCodeDialogVisible = true
+      },
+      closeEditBarCodeDialog() {
+        this.editBarCodeDialogVisible
       }
     }
   }
@@ -293,7 +438,7 @@
     height: 800px;
   }
 
-  .selected {
+  .selectedEle {
     z-index: 99;
     background-color: #f1f1f1;
   }
