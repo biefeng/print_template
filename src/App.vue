@@ -1,8 +1,9 @@
 <template>
   <div id="app">
     <ul id="editMenu" v-show="this.attachEle">
-      <li v-show="this.contentType==='text'" @click="openDialog">编辑</li>
+      <li v-show="this.contentType==='text'" @click="openDialog">编辑文本</li>
       <li v-show="this.contentType==='barCode'" @click="openDialog">编辑条形码</li>
+      <li @click="deleteElement">删除元素</li>
     </ul>
     <el-button type="primary" @click="editTemplateDialogVisible =true">编辑模板区域</el-button>
     <el-dialog
@@ -30,7 +31,6 @@
       </el-option>
     </el-select>
     <el-button type="primary" @click="appendElement">添加元素</el-button>
-    <el-button type="primary" @click="deleteElement">删除元素</el-button>
     <el-button type="primary" @click="submitTemplate">生成模板</el-button>
     <div id="templateArea" style="position: absolute;left:800px;width: 450px;height: 220px;border: 1px solid red;">
       <!--<img id="dragImage" style="left: 100px;position: absolute" @dragstart="ondragstart" @drag="ondrag" @click="selectedElement"
@@ -44,70 +44,70 @@
       :visible.sync="centerDialogVisible"
       width="30%"
       center>
-      <span v-show="this.contentType==='text'" style="display: block">
-        <span style="display: inline-block;font-size: 20px;margin-left: 20px;width: 80px;">字宽：</span><el-select
-        style="width:120px;margin-left: 0px"
-        v-model="fontWidth"
-        placeholder="请选择">
-        <el-option
-          v-for="item in fontWidthSelect"
-          :key="item.value"
-          :label="item.label"
-          :value="item.value">
-        </el-option>
-      </el-select>
-      <span
-        style="display: inline-block;font-size: 20px;margin-left: 20px;width: 80px;">字高</span><el-select
-        v-model="fontHeight"
-        style="width:120px;margin-right: 20px"
-        placeholder="请选择">
-        <el-option
-          v-for="item in fontHeightSelect"
-          :key="item.value"
-          :label="item.label"
-          :value="item.value">
-        </el-option>
-      </el-select>
-      </span>
 
-      <span  style="display: block;margin-top: 10px;">
-        <span style="display: inline-block;font-size: 20px;margin-left: 20px;width: 80px;">键</span><el-input
-        v-model="valueName" style="width: 120px;margin-left: 0px"
-        placeholder="请输入内容"></el-input>
-      <span
-        style="display: inline-block;font-size: 20px;margin-left: 20px;width: 80px;">值</span><el-input
-        v-model="textExampleData" style="width: 120px;margin-left: 0px"
-        placeholder="请输入内容"></el-input>
+      <span style="display: block;margin-top: 10px;">
+        <span class="label">键</span>
+        <el-input v-model="valueName" style="width: 120px;margin-left: 10px" placeholder="请输入内容"></el-input>
+        <span class="label">值</span>
+        <el-input v-model="textExampleData" style="width: 120px;margin-left: 10px" placeholder="请输入内容"></el-input>
+      </span>
+      <span v-show="this.contentType==='text'" style="display: block">
+        <span class="label">字宽：</span>
+        <el-select style="width:120px;margin-left: 10px" v-model="fontWidth" placeholder="请选择">
+          <el-option
+            v-for="item in fontWidthSelect"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value">
+          </el-option>
+        </el-select>
+        <span class="label">字高</span>
+        <el-select v-model="fontHeight" style="width:120px;margin-left: 10px; " placeholder="请选择">
+          <el-option
+            v-for="item in fontHeightSelect"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value">
+          </el-option>
+        </el-select>
       </span>
       <span v-show="contentType==='text'" style="display: block;margin-top: 10px;">
-      <span style="display: inline-block;font-size: 20px;margin-left: 20px;width: 80px;">字体</span><el-select
-        style="width:120px;margin-left: 0px"
-        v-model="fontType"
-        placeholder="请选择">
-        <el-option
-          v-for="item in fontTypeSelect"
-          :key="item.value"
-          :label="item.label"
-          :value="item.value">
-        </el-option>
-      </el-select>
+        <span class="label">字体</span>
+        <el-select style="width:120px;margin-left: 10px" v-model="fontType" placeholder="请选择">
+          <el-option
+            v-for="item in fontTypeSelect"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value">
+          </el-option>
+        </el-select>
       </span>
-      <span v-show="this.contentType==='barCode'" style="display: block;margin-top: 10px;"><span
-        style="display: inline-block;font-size: 20px;margin-right: 10px;width: 80px;">线条宽度</span><el-select
-        v-model="fontHeight"
-        style="width:120px;margin-right: 20px"
-        placeholder="请选择">
-        <el-option
-          v-for="item in fontHeightSelect"
-          :key="item.value"
-          :label="item.label"
-          :value="item.value">
-        </el-option>
-      </el-select><span style="display: inline-block;font-size: 20px;margin-left: 5px;width: 80px;">条码高度</span><el-input
-        v-model="valueName" style="width: 120px;margin-left: 10px"
-        placeholder="请输入内容"></el-input></span>
-
-
+      <span v-show="this.contentType==='barCode'" style="display: block;margin-top: 10px;">
+        <span class="label">线条宽度</span>
+        <el-select v-model="barCodeWidth" style="width:120px;margin-left: 10px" placeholder="请选择">
+          <el-option
+            v-for="item in barCodeWidthSelect"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value">
+          </el-option>
+        </el-select>
+        <span class="label">条码高度</span>
+        <el-input v-model="barCodeHeight" style="width: 120px;margin-left: 10px" placeholder="请输入内容"></el-input>
+      </span>
+      <span v-show="this.contentType==='barCode'" style="display: block;margin-top: 10px;">
+        <span class="label">条码类型</span>
+        <el-select v-model="barCodeType" style="width:120px;margin-left: 10px" placeholder="请选择">
+          <el-option
+            v-for="item in barCodeTypeSelect"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value">
+          </el-option>
+        </el-select>
+        <span class="label">内容位置</span>
+        <el-input v-model="valueName" style="width: 120px;margin-left: 10px" placeholder="请输入内容"></el-input>
+      </span>
       <span slot="footer" class="dialog-footer">
         <el-button @click="closeDialog('cancel')">取 消</el-button>
         <el-button type="primary" @click="closeDialog('apply')">确 定</el-button>
@@ -196,6 +196,35 @@
           label: '4'
         }],
         fontHeight: "0",
+        barCodeWidthSelect: [{
+          value: '2',
+          label: '2'
+        }, {
+          value: '3',
+          label: '3'
+        }, {
+          value: '4',
+          label: '4'
+        }, {
+          value: '5',
+          label: '5'
+        }, {
+          value: '6',
+          label: '6'
+        }],
+        barCodeWidth: 2,
+        barCodeTypeSelect: [{
+          value: 1,
+          label: 'Code128'
+        }, {
+          value: 2,
+          label: 'UPC(A)'
+        }, {
+          value: 3,
+          label: 'EAN-13'
+        }],
+        barCodeType: 1,
+        barCodeHeight: 100,
         printAreaWidth: 450,
         printAreaHeight: 600
       }
@@ -257,6 +286,7 @@
         selected.addEventListener("drag", this.ondrag, true)
         selected.addEventListener("dragstart", this.ondragstart, true)
         let tmp = selected.style
+        this.contentType = selected.getAttribute("type")
         selected.className = "selectedEle"
       },
       appendElement() {
@@ -294,13 +324,16 @@
             break;
         }
         templateAreaDiv.appendChild(childElement)
-        JsBarCode(".barCodeEle", "1234", {
-          format: "pharmacode",
-          lineColor: "#0aa",
-          width: 4,
-          height: 40,
-          displayValue: true
-        })
+        if (this.contentType === 'barCode') {
+          let selectedBarCode = document.getElementsByClassName("barCodeEle")[0];
+          JsBarCode(selectedBarCode, "1234", {
+            format: "pharmacode",
+            lineColor: "#0aa",
+            width: 4,
+            height: 40,
+            displayValue: true
+          })
+        }
       },
       deleteElement() {
         let templateAreaDiv = document.getElementById("templateArea")
@@ -394,16 +427,24 @@
         if (flag && flag === 'apply') {
           let selected = document.getElementsByClassName("selectedEle")[0];
           //selected.style.fontSize = "50px"
-          selected.valueName = this.valueName
-          selected.fontType = this.fontType
-          selected.fontWidth = this.fontWidth
-          selected.fontHeight = this.fontHeight
-          selected.innerText = this.textExampleData
-          this.valueName = undefined
-          this.fontType = undefined
-          this.fontWidth = undefined
-          this.fontHeight = undefined
-          this.textExampleData = undefined
+          if (this.contentType === 'text') {
+            selected.valueName = this.valueName
+            selected.fontType = this.fontType
+            selected.fontWidth = this.fontWidth
+            selected.fontHeight = this.fontHeight
+            selected.innerText = this.textExampleData
+            this.valueName = undefined
+            this.fontType = undefined
+            this.fontWidth = undefined
+            this.fontHeight = undefined
+            this.textExampleData = undefined
+          } else if (this.contentType === 'barCode') {
+            selected.barCodeType = this.barCodeType
+            selected.barCodeHeight = this.barCodeHeight
+            selected.barCodeWidth = this.barCodeWidth
+            selected.valueName = this.valueName
+
+          }
         }
       },
       closeEditTemplateDialog() {
@@ -445,13 +486,33 @@
 
   #editMenu {
     z-index: 100;
-    padding-left: 10px;
-    padding-right: 10px;
     cursor: default;
+    width: 150px;
+    background-color: white;
+    -moz-box-shadow: 2px 2px 5px #333333;
+    -webkit-box-shadow: 2px 2px 5px #333333;
+    box-shadow: 2px 2px 5px #333333;
+    padding-left: 0px;
+  }
+
+  #editMenu li {
+    height: 30px;
+    font-size: 20px;
+    font-weight: 500;
+    vertical-align: center;
+    padding-left: 20px;
+    line-height: 30px;
   }
 
   #editMenu li:hover {
-    background-color: red;
+    background-color: #e8e8e8;
+  }
+
+  span.label {
+    display: inline-block;
+    font-size: 20px;
+    margin-left: 20px;
+    width: 80px;
   }
 
 </style>
