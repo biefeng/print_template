@@ -7,16 +7,15 @@
     </ul>
     <ul id="editTemMenu" class="menu" v-show="this.editTemMenuVisible">
       <li @mousedown="editTemplateDialogVisible =true">编辑模板区域</li>
-      <li @mouseover="openContentTypeSelect">添加元素</li>
+      <li @mouseenter="openContentTypeSelect" @mouseleave="closeContentTypeSelect">添加元素</li>
     </ul>
-    <div id="contentTypeSelect" onmouseout="this.closeContentTypeSelect(event,this)" style="width: 150px;z-index: 101" v-show="this.contentTypeSelectVisible==true">
-      <ul class="menu">
-        <li @mousedown="appendElement('text')">文本</li>
-        <li @mousedown="appendElement('barCode')">条形码</li>
-        <li>二维码</li>
-        <li>图片</li>
-      </ul>
-    </div>
+
+    <ul id="contentTypeSelect" class="menu" v-show="this.contentTypeSelectVisible">
+      <li @mousedown="appendElement('text')">文本</li>
+      <li @mousedown="appendElement('barCode')">条形码</li>
+      <li>二维码</li>
+      <li>图片</li>
+    </ul>
     <!--<el-button type="primary" @click="editTemplateDialogVisible =true">编辑模板区域</el-button>-->
     <el-dialog
       title="提示"
@@ -34,7 +33,7 @@
       </span>
     </el-dialog>
     <br/>
-    <el-select v-model="contentType" clearable placeholder="文本">
+    <!--<el-select v-model="contentType" clearable placeholder="文本">
       <el-option
         v-for="item in contentTypeSelect"
         :key="item.value"
@@ -42,7 +41,7 @@
         :value="item.value">
       </el-option>
     </el-select>
-    <el-button type="primary" @click="appendElement">添加元素</el-button>
+    <el-button type="primary" @click="appendElement">添加元素</el-button>-->
     <el-button type="primary" @click="submitTemplate">生成模板</el-button>
     <div id="templateArea" style="position: absolute;left:800px;width: 450px;height: 220px;border: 1px solid red;">
       <!--<img id="dragImage" style="left: 100px;position: absolute" @dragstart="ondragstart" @drag="ondrag" @click="selectedElement"
@@ -306,12 +305,16 @@
       templateAreaDiv.style.height = this.printAreaHeight + 'px'
       templateAreaDiv.addEventListener("contextmenu", this.popTemplateMenu)
       let contentTyleSelect = document.getElementById("contentTypeSelect");
-      // contentTyleSelect.addEventListener("mouseout",, {capture: false})
+      contentTyleSelect.addEventListener("mouseleave", this.closeContentTypeSelect, {capture: false})
     },
     created() {
 
     },
     methods: {
+      /*加载模板，即预览功能*/
+      loadTemplates() {
+
+      },
       ondragstart(e) {
         //记录起始位置
         this.selectedEle.offsetX = e.offsetX;
@@ -374,11 +377,12 @@
         switch (contentType) {
           case "text":
             childElement = document.createElement("div");
-            childElement.textContent = "Hello"
+            childElement.textContent = "Hello!"
             childElement.addEventListener("click", this.selectedElement, true)
             childElement.fontWidth = FONT_WIDTH
-            childElement.fontHeight = this.FONT_HEIGHT
-            childElement.fontType = this.FONT_TYPE
+            childElement.exampleData = 'Hello!'
+            childElement.fontHeight = FONT_HEIGHT
+            childElement.fontType = FONT_TYPE
             childElement.setAttribute("type", "text")
             childElement.addEventListener("contextmenu", this.popMenu)
             childElement.style = "position: absolute;top:100px;cursor:default;font-weight:bolder;border:1px solid gray;text-align:center;vertical-align:center;font-size:13px;padding:0px 10px"
@@ -395,7 +399,8 @@
             childElement.displayBarCodeValue = BARCODE_DISPLAY_VALUE
             childElement.barCodeWidth = BARCODE_WIDTH
             childElement.barCodeHeight = BARCODE_HEIGHT
-            JsBarCode(childElement, "Hello!", {
+            childElement.exampleData = 'Hello!'
+            JsBarCode(childElement, childElement.exampleData, {
               format: this.barCodeType,
               lineColor: "#0aa",
               width: 2,
@@ -435,6 +440,8 @@
           tmp.top = item.offsetTop
           tmp.type = contentType
           tmp.valueName = item.valueName
+          tmp.horizenPosition = item.horizenPosition
+          tmp.verticalPosition = item.verticalPosition
 
           switch (contentType) {
             case "text":
@@ -505,12 +512,21 @@
       openDialog() {
         this.centerDialogVisible = true
         let selected = document.getElementsByClassName("selectedEle")[0];
+        this.horizenPosition = selected.offsetLeft
+        this.verticalPosition = selected.offsetTop
+        this.exampleData = selected.exampleData
         switch (this.contentType) {
           case 'text':
             this.valueName = selected.valueName
-            this.exampleData = selected.innerText
             this.fontHeight = selected.fontHeight
             this.fontWidth = selected.fontWidth
+            break
+          case 'barCode':
+            this.barCodeType = selected.barCodeType
+            this.barCodeHeight = selected.barCodeHeight
+            this.barCodeWidth = selected.barCodeWidth
+            this.barCodeValuePosition = selected.barCodeValuePosition
+            this.displayBarCodeValue = selected.displayBarCodeValue
             break
         }
       },
@@ -518,20 +534,21 @@
         this.centerDialogVisible = false
         if (flag && flag === 'apply') {
           let selected = document.getElementsByClassName("selectedEle")[0];
-          selected.style.left = this.horizenPosition
-          selected.style.top = this.verticalPosition
+          selected.style.left = this.horizenPosition + "px"
+          selected.style.top = this.verticalPosition + "px"
           //selected.style.fontSize = "50px"
           if (this.contentType === 'text') {
             selected.valueName = this.valueName
+            selected.style.transform = "scale(" + (parseInt(this.fontWidth) + 1) + "," + (parseInt(this.fontHeight) + 1) + ")"
             selected.fontType = this.fontType
             selected.fontWidth = this.fontWidth
             selected.fontHeight = this.fontHeight
             selected.innerText = this.exampleData
-            this.valueName = undefined
+            /*this.valueName = undefined
             this.fontType = undefined
             this.fontWidth = undefined
             this.fontHeight = undefined
-            this.exampleData = undefined
+            this.exampleData = undefined*/
           } else if (this.contentType === 'barCode') {
             selected.barCodeType = this.barCodeType
             selected.barCodeHeight = parseInt(this.barCodeHeight)
@@ -579,16 +596,15 @@
         this.contentTypeSelectVisible = true
         console.log(e)
       },
-      closeContentTypeSelect(e, obj) {
-        if (e.type != "mouseover" && e.type != "mouseout") {
-          return false;
-        }
-        var relag = relag ? e.relatedTarget : (e.type == "mouseout") ? e.toElement : e.formElement;
-        if (relag && relag == obj) {
-          if (e.type == "mouseout") {
-            this.$message("111")
+      closeContentTypeSelect(e) {
+        let contentTypeSelect = document.getElementById("contentTypeSelect");
+        this.contentTypeSelectVisible = false
+        for (let i = 0; i < contentTypeSelect.children.length; i++) {
+          if (e.toElement == contentTypeSelect.children[i]) {
+            this.contentTypeSelectVisible = true
           }
         }
+
       }
 
     }
@@ -614,6 +630,12 @@
   .selectedEle {
     z-index: 99;
     background-color: #f1f1f1;
+  }
+
+  img.selectedEle {
+    -moz-box-shadow: 2px 2px 5px #333333;
+    -webkit-box-shadow: 2px 2px 5px #333333;
+    box-shadow: 2px 2px 5px #333333;
   }
 
   ul.menu {
