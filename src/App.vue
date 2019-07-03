@@ -9,7 +9,7 @@
       <li @mousedown="editTemplateDialogVisible =true">编辑模板区域</li>
       <li @mouseover="openContentTypeSelect">添加元素</li>
     </ul>
-    <div id="contentTypeSelect" onmouseout="closeContentTypeSelect(event,this)" style="width: 150px;z-index: 101" v-show="this.contentTypeSelectVisible==true">
+    <div id="contentTypeSelect" onmouseout="this.closeContentTypeSelect(event,this)" style="width: 150px;z-index: 101" v-show="this.contentTypeSelectVisible==true">
       <ul class="menu">
         <li @mousedown="appendElement('text')">文本</li>
         <li @mousedown="appendElement('barCode')">条形码</li>
@@ -579,7 +579,17 @@
         this.contentTypeSelectVisible = true
         console.log(e)
       },
-      g
+      closeContentTypeSelect(e, obj) {
+        if (e.type != "mouseover" && e.type != "mouseout") {
+          return false;
+        }
+        var relag = relag ? e.relatedTarget : (e.type == "mouseout") ? e.toElement : e.formElement;
+        if (relag && relag == obj) {
+          if (e.type == "mouseout") {
+            this.$message("111")
+          }
+        }
+      }
 
     }
   }
