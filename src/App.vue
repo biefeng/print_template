@@ -1,5 +1,13 @@
 <template>
   <div id="app">
+
+    <ul id="templateList"
+        style="width: 200px;border: 1px solid red;list-style: none;padding-left: 0px;background-color: darkgrey;">
+      <li :index="index" style="border-bottom:1px solid  aliceblue;padding-left: 30px"
+          v-for=" (template,index) in templates">
+        <span>{{template.templateName }}</span>
+      </li>
+    </ul>
     <ul id="editEleMenu" class="menu" v-show="this.attachEle">
       <li v-show="this.contentType==='text'" @mousedown="openDialog">编辑文本</li>
       <li v-show="this.contentType==='barCode'" @mousedown="openDialog">编辑条形码</li>
@@ -43,11 +51,7 @@
     </el-select>
     <el-button type="primary" @click="appendElement">添加元素</el-button>-->
     <el-button type="primary" @click="submitTemplate">生成模板</el-button>
-    <div id="templateArea" style="position: absolute;left:800px;width: 450px;height: 220px;border: 1px solid red;">
-      <!--<img id="dragImage" style="left: 100px;position: absolute" @dragstart="ondragstart" @drag="ondrag" @click="selectedElement"
-           @dragend="ondragend" src="./assets/logo.png" alt=""/>-->
-
-      <!--<div id="dragImage" style="left: 100px;position: absolute" @click="selectedElement" alt="">First</div>-->
+    <div id="templateArea" style="position: relative;margin: auto;width: 450px;height: 220px;border: 1px solid red;">
     </div>
 
     <el-dialog title="编辑格式" :visible.sync="centerDialogVisible" width="30%" center>
@@ -166,6 +170,7 @@
     name: 'App',
     data() {
       return {
+        templates: [],
         centerDialogVisible: false,
         editTemplateDialogVisible: false,
         editBarCodeDialogVisible: false,
@@ -305,15 +310,41 @@
       templateAreaDiv.style.height = this.printAreaHeight + 'px'
       templateAreaDiv.addEventListener("contextmenu", this.popTemplateMenu)
       let contentTyleSelect = document.getElementById("contentTypeSelect");
+      //设置false，禁止子元素进行捕获
       contentTyleSelect.addEventListener("mouseleave", this.closeContentTypeSelect, {capture: false})
     },
+    updated() {
+      let templateList = document.getElementById("templateList");
+      let loadTemplates = this.loadTemplates
+      for (let i = 0; i < templateList.children.length; i++) {
+        let child = templateList.children[i]
+        child.addEventListener("click", function () {
+          loadTemplates(child.getAttribute("index"))
+        })
+      }
+    },
     created() {
-
+      this.$http.get("http://localhost:7538/template/list").then(res => {
+        this.templates = res.data;
+      })
     },
     methods: {
       /*加载模板，即预览功能*/
-      loadTemplates() {
+      loadTemplates(index) {
+        //闭包实现参数绑定
+        let templates = this.templates
+        let templateAreaDiv = document.getElementById("templateArea")
 
+        let html = templates[index].html;
+        templateAreaDiv.style.width=templates[index].printWidth+"px"
+        templateAreaDiv.style.height=templates[index].printHeight+"px"
+        templateAreaDiv.innerHTML = html
+
+        let collection = document.getElementsByClassName("templateElement");
+        for (let i = 0; i < collection.length; i++) {
+          collection[i].addEventListener("mousedown", this.selectedElement, true)
+          collection[i].addEventListener("contextmenu", this.popMenu)
+        }
       },
       ondragstart(e) {
         //记录起始位置
@@ -363,7 +394,7 @@
         selected.addEventListener("dragstart", this.ondragstart, true)
         let tmp = selected.style
         this.contentType = selected.getAttribute("type")
-        selected.className = "selectedEle"
+        selected.classList.add("selectedEle")
       },
       appendElement(contentType) {
         if (!contentType || contentType === '') {
@@ -378,21 +409,17 @@
           case "text":
             childElement = document.createElement("div");
             childElement.textContent = "Hello!"
-            childElement.addEventListener("click", this.selectedElement, true)
             childElement.fontWidth = FONT_WIDTH
             childElement.exampleData = 'Hello!'
             childElement.fontHeight = FONT_HEIGHT
             childElement.fontType = FONT_TYPE
             childElement.setAttribute("type", "text")
-            childElement.addEventListener("contextmenu", this.popMenu)
             childElement.style = "position: absolute;top:100px;cursor:default;font-weight:bolder;border:1px solid gray;text-align:center;vertical-align:center;font-size:13px;padding:0px 10px"
             break;
           case 'barCode':
             childElement = document.createElement("img");
             childElement.classList.add("barCodeEle")
-            childElement.addEventListener("click", this.selectedElement, true)
             childElement.setAttribute("type", "barCode")
-            childElement.addEventListener("contextmenu", this.popMenu)
             childElement.style = "position: absolute;top:100px;cursor:default"
             childElement.barCodeType = BARCODE_TYPE
             childElement.barCodeValuePosition = BARCODE_POS
@@ -412,9 +439,11 @@
         if (selectedEle) {
           selectedEle.classList.remove("selectedEle")
         }
+        childElement.addEventListener("click", this.selectedElement, true)
+        childElement.addEventListener("contextmenu", this.popMenu)
+        childElement.classList.add("templateElement");
         childElement.classList.add("selectedEle");
         templateAreaDiv.appendChild(childElement)
-        console.log(templateAreaDiv)
       },
       deleteElement() {
         let templateAreaDiv = document.getElementById("templateArea")
@@ -440,8 +469,8 @@
           tmp.top = item.offsetTop
           tmp.type = contentType
           tmp.valueName = item.valueName
-          tmp.horizenPosition = item.horizenPosition
-          tmp.verticalPosition = item.verticalPosition
+          tmp.horizenPosition = item.offsetLeft
+          tmp.verticalPosition = item.offsetTop
 
           switch (contentType) {
             case "text":
@@ -464,6 +493,7 @@
           "elements": this.addedEle,
           "printWidth": templateAreaDiv.clientWidth,
           "printHeight": templateAreaDiv.clientHeight,
+          "html": templateAreaDiv.innerHTML,
           "templateName": "template1"
         }, {
           headers: {
@@ -501,6 +531,7 @@
         }
       },
       popTemplateMenu(e) {
+        e.stopPropagation()
         this.popMenu(e, "template")
       },
       closeMenu(e) {
@@ -669,6 +700,10 @@
     font-size: 20px;
     margin-left: 20px;
     width: 80px;
+  }
+
+  .templateElement {
+    z-index: 99;
   }
 
 </style>
