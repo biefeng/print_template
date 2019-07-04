@@ -1,15 +1,21 @@
 import Vue from 'vue'
 import Router from 'vue-router'
-import HelloWorld from '@/components/HelloWorld'
+import editTemplate from '@/components/editTemplate'
+import listTemplate from '@/components/listTemplate'
 
 Vue.use(Router)
 
 export default new Router({
   routes: [
-    /*{
-      path: '/',
-      name: 'HelloWorld',
-      component: HelloWorld
-    }*/
+    {
+      path: '/listTemplate',
+      name: 'listTemplate',
+      component: listTemplate
+    },
+    {
+      path: '/editTemplate',
+      name: 'editTemplate',
+      component: editTemplate
+    }
   ]
 })

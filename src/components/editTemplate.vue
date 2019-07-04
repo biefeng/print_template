@@ -1,13 +1,158 @@
 <template>
-  <div id="app">
-    <router-view></router-view>
-  </div>
+  <div id="printerTemplate">
+    <!--<ul id="templateList"
+        style="width: 200px;border: 1px solid red;list-style: none;padding-left: 0px;background-color: darkgrey;">
+      <li :index="index" style="border-bottom:1px solid  aliceblue;padding-left: 30px"
+          v-for=" (template,index) in templates">
+        <span>{{template.templateName }}</span>
+      </li>
+    </ul>-->
+    <ul id="editEleMenu" class="menu" v-show="this.attachEle">
+      <li v-show="this.contentType==='text'" @mousedown="openDialog">编辑文本</li>
+      <li v-show="this.contentType==='barCode'" @mousedown="openDialog">编辑条形码</li>
+      <li @mousedown="deleteElement">删除元素</li>
+    </ul>
+    <ul id="editTemMenu" class="menu" v-show="this.editTemMenuVisible">
+      <li @mousedown="editTemplateDialogVisible =true">编辑模板区域</li>
+      <li @mouseenter="openContentTypeSelect" @mouseleave="closeContentTypeSelect">添加元素</li>
+    </ul>
 
+    <ul id="contentTypeSelect" class="menu" v-show="this.contentTypeSelectVisible">
+      <li @mousedown="appendElement('text')">文本</li>
+      <li @mousedown="appendElement('barCode')">条形码</li>
+      <li>二维码</li>
+      <li>图片</li>
+    </ul>
+    <!--<el-button type="primary" @click="editTemplateDialogVisible =true">编辑模板区域</el-button>-->
+    <el-dialog
+      title="提示"
+      :visible.sync="editTemplateDialogVisible"
+      width="30%"
+      center>
+      <span style="display: block;margin-bottom: 10px"><p style="display: inline;margin-right: 20px">宽度</p><el-input
+        style="width: 300px" v-model="printAreaWidth" placeholder="打印区域宽度"></el-input></span>
+      <span style="display: block"><p style="display: inline;margin-right: 20px">高度</p><el-input style="width: 300px"
+                                                                                                 v-model="printAreaHeight"
+                                                                                                 placeholder="打印区域高度"></el-input></span>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="editTemplateDialogVisible = false">取 消</el-button>
+        <el-button type="primary" @click="closeEditTemplateDialog">确 定</el-button>
+      </span>
+    </el-dialog>
+    <br/>
+    <!--<el-select v-model="contentType" clearable placeholder="文本">
+      <el-option
+        v-for="item in contentTypeSelect"
+        :key="item.value"
+        :label="item.label"
+        :value="item.value">
+      </el-option>
+    </el-select>
+    <el-button type="primary" @click="appendElement">添加元素</el-button>-->
+    <el-button type="primary" @click="submitTemplate">生成模板</el-button>
+    <div id="templateArea"
+         style="position: relative;margin: auto;width: 450px;height: 220px;border: 1px solid red;background-color: rgba(218,250,238,0.14)">
+    </div>
+
+    <el-dialog title="编辑格式" :visible.sync="centerDialogVisible" width="30%" center>
+      <span style="display: block;margin-top: 10px;">
+        <span class="label">水平定位</span>
+        <el-input v-model="horizenPosition" style="width: 120px;margin-left: 10px" placeholder="请输入内容"></el-input>
+        <span class="label">垂直定位</span>
+        <el-input v-model="verticalPosition" style="width: 120px;margin-left: 10px" placeholder="请输入内容"></el-input>
+      </span>
+      <span style="display: block;margin-top: 10px;">
+        <span class="label">键</span>
+        <el-input v-model="valueName" style="width: 120px;margin-left: 10px" placeholder="请输入内容"></el-input>
+        <span class="label">值</span>
+        <el-input v-model="exampleData" style="width: 120px;margin-left: 10px" placeholder="请输入内容"></el-input>
+      </span>
+      <span v-show="this.contentType==='text'" style="display: block">
+        <span class="label">字宽：</span>
+        <el-select style="width:120px;margin-left: 10px" v-model="fontWidth" placeholder="请选择">
+          <el-option
+            v-for="item in fontWidthSelect"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value">
+          </el-option>
+        </el-select>
+        <span class="label">字高</span>
+        <el-select v-model="fontHeight" style="width:120px;margin-left: 10px; " placeholder="请选择">
+          <el-option
+            v-for="item in fontHeightSelect"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value">
+          </el-option>
+        </el-select>
+      </span>
+      <span v-show="contentType==='text'" style="display: block;margin-top: 10px;">
+        <span class="label">字体</span>
+        <el-select style="width:120px;margin-left: 10px" v-model="fontType" placeholder="请选择">
+          <el-option
+            v-for="item in fontTypeSelect"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value">
+          </el-option>
+        </el-select>
+      </span>
+      <span v-show="this.contentType==='barCode'" style="display: block;margin-top: 10px;">
+        <span class="label">线条宽度</span>
+        <el-select v-model="barCodeWidth" style="width:120px;margin-left: 10px" placeholder="请选择">
+          <el-option
+            v-for="item in barCodeWidthSelect"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value">
+          </el-option>
+        </el-select>
+        <span class="label">条码高度</span>
+        <el-input v-model="barCodeHeight" style="width: 120px;margin-left: 10px" placeholder="请输入内容"></el-input>
+      </span>
+      <span v-show="this.contentType==='barCode'" style="display: block;margin-top: 10px;">
+        <span class="label">条码类型</span>
+        <el-select v-model="barCodeType" style="width:120px;margin-left: 10px" placeholder="请选择">
+          <el-option
+            v-for="item in barCodeTypeSelect"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value">
+          </el-option>
+        </el-select>
+        <span class="label">显示数据</span>
+        <el-select v-model="displayBarCodeValue" style="width:120px;margin-left: 10px" placeholder="请选择">
+          <el-option
+            v-for="item in displayBarCodeValueSelect"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value">
+          </el-option>
+        </el-select>
+      </span>
+      <span v-show="this.contentType==='barCode' && this.displayBarCodeValue==true"
+            style="display: block;margin-top: 10px;">
+        <span class="label">数据位置</span>
+        <el-select v-model="barCodeValuePosition" style="width:120px;margin-left: 10px" placeholder="请选择">
+          <el-option
+            v-for="item in barCodeValuePositionSelect"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value">
+          </el-option>
+        </el-select>
+      </span>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="closeDialog('cancel')">取 消</el-button>
+        <el-button type="primary" @click="closeDialog('apply')">确 定</el-button>
+      </span>
+    </el-dialog>
+  </div>
 </template>
 
 <script>
   import draggable from 'vuedraggable'
-  import index from "./router";
   import JsBarCode from 'jsbarcode'
 
   const FONT_WIDTH = 0
@@ -21,10 +166,9 @@
 
   export default {
     "components": {draggable},
-    name: 'App',
+    name: 'printerTemplate',
     data() {
       return {
-        templates: [],
         centerDialogVisible: false,
         editTemplateDialogVisible: false,
         editBarCodeDialogVisible: false,
@@ -488,79 +632,11 @@
             this.contentTypeSelectVisible = true
           }
         }
-
       }
-
     }
   }
 </script>
 
-<style>
-
-  body {
-    z-index: -1;
-  }
-
-  #app {
-    font-family: 'Avenir', Helvetica, Arial, sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    #text-align: center;
-    color: #2c3e50;
-    margin-top: 60px;
-    height: 800px;
-  }
-
-  .selectedEle {
-    z-index: 99;
-    background-color: #f1f1f1;
-  }
-
-  img.selectedEle {
-    -moz-box-shadow: 2px 2px 5px #333333;
-    -webkit-box-shadow: 2px 2px 5px #333333;
-    box-shadow: 2px 2px 5px #333333;
-  }
-
-  ul.menu {
-    z-index: 100;
-    cursor: default;
-    width: 150px;
-    background-color: white;
-    -moz-box-shadow: 2px 2px 5px #333333;
-    -webkit-box-shadow: 2px 2px 5px #333333;
-    box-shadow: 2px 2px 5px #333333;
-    padding-left: 0px;
-    list-style: none;
-    margin: 0px;
-  }
-
-  ul.menu li {
-    height: 30px;
-    font-size: 20px;
-    font-weight: 500;
-    vertical-align: center;
-    padding-left: 20px;
-    line-height: 30px;
-  }
-
-  ul.menu li:hover {
-    background-color: #e8e8e8;
-  }
-
-  span.label {
-    display: inline-block;
-    font-size: 20px;
-    margin-left: 20px;
-    width: 80px;
-  }
-
-  .templateElement {
-    z-index: 99;
-  }
-
-  .el-table td, .el-table th {
-    text-align: center;
-  }
+<style scoped>
 
 </style>
