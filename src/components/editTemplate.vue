@@ -14,7 +14,10 @@
     </ul>
     <ul id="editTemMenu" class="menu" v-show="this.editTemMenuVisible">
       <li @mousedown="editTemplateDialogVisible =true">编辑模板区域</li>
-      <li @mouseenter="openContentTypeSelect" @mouseleave="closeContentTypeSelect">添加元素</li>
+      <li @mousedown="function(e) {
+      e.stopPropagation()
+      }" @mouseenter="openContentTypeSelect" @mouseleave="closeContentTypeSelect">添加元素
+      </li>
     </ul>
 
     <ul id="contentTypeSelect" class="menu" v-show="this.contentTypeSelectVisible">
@@ -51,7 +54,7 @@
     <el-button type="primary" @click="appendElement">添加元素</el-button>-->
     <el-button type="primary" @click="submitTemplate">生成模板</el-button>
     <div id="templateArea"
-         style="position: relative;margin: auto;width: 450px;height: 220px;border: 1px solid red;background-color: rgba(218,250,238,0.14)">
+         style="position: relative ;margin: 100px auto;width: 450px;height: 220px;border: 1px solid red;background-color: rgba(218,250,238,0.14)">
     </div>
 
     <el-dialog title="编辑格式" :visible.sync="centerDialogVisible" width="30%" center>
@@ -163,6 +166,9 @@
   const BARCODE_DISPLAY_VALUE = false
   const BARCODE_TYPE = 'CODE128'
   const BARCODE_POS = 'bottom'
+  const DEFAULT_HORIZEN_POS = 100
+  const DEFAULT_VERTICAL_POS = 100
+
 
   export default {
     "components": {draggable},
@@ -176,6 +182,7 @@
         contentTypeSelectVisible: false,
         horizenPosition: 0,
         verticalPosition: 0,
+        template: {},
         contentTypeSelect: [{
           value: 'text',
           label: '文本'
@@ -303,45 +310,42 @@
     },
     mounted() {
       let templateAreaDiv = document.getElementById("templateArea");
-      console.log(templateAreaDiv)
       templateAreaDiv.style.width = this.printAreaWidth + 'px'
       templateAreaDiv.style.height = this.printAreaHeight + 'px'
       templateAreaDiv.addEventListener("contextmenu", this.popTemplateMenu)
       let contentTyleSelect = document.getElementById("contentTypeSelect");
       //设置false，禁止子元素进行捕获
       contentTyleSelect.addEventListener("mouseleave", this.closeContentTypeSelect, {capture: false})
+      this.loadTemplates(this.$route.params.row)
     },
     updated() {
-      let templateList = document.getElementById("templateList");
+      /*let templateList = document.getElementById("templateList");
       let loadTemplates = this.loadTemplates
       for (let i = 0; i < templateList.children.length; i++) {
         let child = templateList.children[i]
         child.addEventListener("click", function () {
           loadTemplates(child.getAttribute("index"))
         })
-      }
-    },
-    created() {
-      this.$http.get("http://localhost:7538/template/list").then(res => {
-        this.templates = res.data;
-      })
+      }*/
     },
     methods: {
       /*加载模板，即预览功能*/
-      loadTemplates(index) {
+      loadTemplates(template) {
         //闭包实现参数绑定
-        let templates = this.templates
-        let templateAreaDiv = document.getElementById("templateArea")
+        if (template) {
+          let templates = this.templates
+          let templateAreaDiv = document.getElementById("templateArea")
 
-        let html = templates[index].html;
-        templateAreaDiv.style.width = templates[index].printWidth + "px"
-        templateAreaDiv.style.height = templates[index].printHeight + "px"
-        templateAreaDiv.innerHTML = html
-
-        let collection = document.getElementsByClassName("templateElement");
-        for (let i = 0; i < collection.length; i++) {
-          collection[i].addEventListener("mousedown", this.selectedElement, true)
-          collection[i].addEventListener("contextmenu", this.popMenu)
+          let html = template.html;
+          templateAreaDiv.style.width = template.printWidth + "px"
+          templateAreaDiv.style.height = template.printHeight + "px"
+          templateAreaDiv.innerHTML = html
+          let collection = document.getElementsByClassName("templateElement");
+          for (let i = 0; i < collection.length; i++) {
+            this.loadData(collection[i], template.elements[i])
+            collection[i].addEventListener("mousedown", this.selectedElement, true)
+            collection[i].addEventListener("contextmenu", this.popMenu)
+          }
         }
       },
       ondragstart(e) {
@@ -412,13 +416,13 @@
             childElement.fontHeight = FONT_HEIGHT
             childElement.fontType = FONT_TYPE
             childElement.setAttribute("type", "text")
-            childElement.style = "position: absolute;top:100px;cursor:default;font-weight:bolder;text-align:center;vertical-align:center;font-size:13px;padding:0px 10px"
+            childElement.style = "position: absolute;cursor:default;transform:scaleX(1.5);font-weight:bolder;text-align:center;vertical-align:center;font-size:13px;padding:0px 10px"
             break;
           case 'barCode':
             childElement = document.createElement("img");
             childElement.classList.add("barCodeEle")
             childElement.setAttribute("type", "barCode")
-            childElement.style = "position: absolute;top:100px;cursor:default"
+            childElement.style = "position: absolute;cursor:default;transform:scale(0.6,0.6);"
             childElement.barCodeType = BARCODE_TYPE
             childElement.barCodeValuePosition = BARCODE_POS
             childElement.displayBarCodeValue = BARCODE_DISPLAY_VALUE
@@ -437,6 +441,10 @@
         if (selectedEle) {
           selectedEle.classList.remove("selectedEle")
         }
+        childElement.horizenPosition = DEFAULT_HORIZEN_POS
+        childElement.verticalPosition = DEFAULT_VERTICAL_POS
+        childElement.style.top = DEFAULT_VERTICAL_POS + "px"
+        childElement.style.left = DEFAULT_HORIZEN_POS + "px"
         childElement.addEventListener("click", this.selectedElement, true)
         childElement.addEventListener("contextmenu", this.popMenu)
         childElement.classList.add("templateElement");
@@ -487,7 +495,7 @@
           }
           this.addedEle.push(tmp)
         })
-        this.$http.post("http://localhost:7538/template/add", {
+        this.$http.post("http://localhost:7538/template/post", {
           "elements": this.addedEle,
           "printWidth": templateAreaDiv.clientWidth,
           "printHeight": templateAreaDiv.clientHeight,
@@ -502,7 +510,6 @@
         }).then(
           console.log("请求成功")
         )
-        console.log(this.addedEle)
       },
       popMenu(e, flag) {
         var event = e || window.event
@@ -541,21 +548,28 @@
       openDialog() {
         this.centerDialogVisible = true
         let selected = document.getElementsByClassName("selectedEle")[0];
-        this.horizenPosition = selected.offsetLeft
-        this.verticalPosition = selected.offsetTop
-        this.valueName = selected.valueName
-        this.exampleData = selected.exampleData
-        switch (this.contentType) {
+        this.loadData(this, selected)
+      },
+      loadData(selected, element) {
+        if (!element) {
+          element = selected
+        }
+        selected.horizenPosition = element.horizenPosition
+        selected.verticalPosition = element.verticalPosition
+        selected.valueName = element.valueName
+        selected.exampleData = element.exampleData
+        let contentType = element.type
+        switch (contentType) {
           case 'text':
-            this.fontHeight = selected.fontHeight
-            this.fontWidth = selected.fontWidth
+            selected.fontHeight = element.fontHeight
+            selected.fontWidth = element.fontWidth
             break
           case 'barCode':
-            this.barCodeType = selected.barCodeType
-            this.barCodeHeight = selected.barCodeHeight
-            this.barCodeWidth = selected.barCodeWidth
-            this.barCodeValuePosition = selected.barCodeValuePosition
-            this.displayBarCodeValue = selected.displayBarCodeValue
+            selected.barCodeType = element.barCodeType
+            selected.barCodeHeight = element.barCodeHeight
+            selected.barCodeWidth = element.barCodeWidth
+            selected.barCodeValuePosition = element.barCodeValuePosition
+            selected.displayBarCodeValue = element.displayBarCodeValue
             break
         }
       },
@@ -565,10 +579,13 @@
           let selected = document.getElementsByClassName("selectedEle")[0];
           selected.style.left = this.horizenPosition + "px"
           selected.style.top = this.verticalPosition + "px"
+          selected.horizenPosition = this.horizenPosition
+          selected.verticalPosition = this.verticalPosition
           selected.exampleData = this.exampleData
           selected.valueName = this.valueName
           //selected.style.fontSize = "50px"
-          if (this.contentType === 'text') {
+          let contentType = selected.getAttribute("type");
+          if (contentType === 'text') {
             selected.style.transform = "scale(" + (parseInt(this.fontWidth) + 1.5) + "," + (parseInt(this.fontHeight) + 1) + ")"
             selected.fontType = this.fontType
             selected.fontWidth = this.fontWidth
@@ -579,7 +596,7 @@
             this.fontWidth = undefined
             this.fontHeight = undefined
             this.exampleData = undefined*/
-          } else if (this.contentType === 'barCode') {
+          } else if (contentType === 'barCode') {
             selected.barCodeType = this.barCodeType
             selected.barCodeHeight = parseInt(this.barCodeHeight)
             selected.barCodeWidth = this.barCodeWidth
@@ -622,7 +639,6 @@
         contentTypeSelect.style.left = parent.offsetLeft + parent.offsetWidth + 'px'
         contentTypeSelect.style.top = parent.offsetTop + currentTarget.offsetHeight * (index - 1) + 'px'
         this.contentTypeSelectVisible = true
-        console.log(e)
       },
       closeContentTypeSelect(e) {
         let contentTypeSelect = document.getElementById("contentTypeSelect");
@@ -639,4 +655,53 @@
 
 <style scoped>
 
+
+  ul.menu {
+    z-index: 100;
+    cursor: default;
+    width: 150px;
+    background-color: white;
+    border-right: none;
+    -moz-box-shadow:  0px 5px 5px #333333;
+    -webkit-box-shadow:  0px 5px 5px #333333;
+    box-shadow: 0px 5px 5px #333333;
+    padding-left: 0px;
+    list-style: none;
+    margin: 0px;
+  }
+
+  span.label {
+    display: inline-block;
+    font-size: 20px;
+    margin-left: 20px;
+    width: 80px;
+  }
+
+  ul.menu li:hover {
+    background-color: #e8e8e8;
+  }
+
+  ul.menu li {
+    height: 30px;
+    font-size: 20px;
+    font-weight: 500;
+    vertical-align: center;
+    padding-left: 20px;
+    line-height: 30px;
+  }
+
+  .selectedEle {
+    z-index: 99;
+    background-color: #f1f1f1;
+  }
+
+  .templateElement {
+    z-index: 99;
+  }
+
+  img.selectedEle {
+    -moz-box-shadow: 2px 2px 5px #333333;
+    -webkit-box-shadow: 2px 2px 5px #333333;
+    box-shadow: 2px 2px 5px #333333;
+  }
 </style>

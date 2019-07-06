@@ -158,29 +158,29 @@
       }
     },
     mounted() {
-      let templateAreaDiv = document.getElementById("templateArea");
+      /*let templateAreaDiv = document.getElementById("templateArea");
       console.log(templateAreaDiv)
       templateAreaDiv.style.width = this.printAreaWidth + 'px'
       templateAreaDiv.style.height = this.printAreaHeight + 'px'
       templateAreaDiv.addEventListener("contextmenu", this.popTemplateMenu)
       let contentTyleSelect = document.getElementById("contentTypeSelect");
       //设置false，禁止子元素进行捕获
-      contentTyleSelect.addEventListener("mouseleave", this.closeContentTypeSelect, {capture: false})
+      contentTyleSelect.addEventListener("mouseleave", this.closeContentTypeSelect, {capture: false})*/
     },
     updated() {
-      let templateList = document.getElementById("templateList");
+      /*let templateList = document.getElementById("templateList");
       let loadTemplates = this.loadTemplates
       for (let i = 0; i < templateList.children.length; i++) {
         let child = templateList.children[i]
         child.addEventListener("click", function () {
           loadTemplates(child.getAttribute("index"))
         })
-      }
+      }*/
     },
     created() {
-      this.$http.get("http://localhost:7538/template/list").then(res => {
+      /*this.$http.get("http://localhost:7538/template/list").then(res => {
         this.templates = res.data;
-      })
+      })*/
     },
     methods: {
       /*加载模板，即预览功能*/
@@ -511,56 +511,5 @@
     height: 800px;
   }
 
-  .selectedEle {
-    z-index: 99;
-    background-color: #f1f1f1;
-  }
-
-  img.selectedEle {
-    -moz-box-shadow: 2px 2px 5px #333333;
-    -webkit-box-shadow: 2px 2px 5px #333333;
-    box-shadow: 2px 2px 5px #333333;
-  }
-
-  ul.menu {
-    z-index: 100;
-    cursor: default;
-    width: 150px;
-    background-color: white;
-    -moz-box-shadow: 2px 2px 5px #333333;
-    -webkit-box-shadow: 2px 2px 5px #333333;
-    box-shadow: 2px 2px 5px #333333;
-    padding-left: 0px;
-    list-style: none;
-    margin: 0px;
-  }
-
-  ul.menu li {
-    height: 30px;
-    font-size: 20px;
-    font-weight: 500;
-    vertical-align: center;
-    padding-left: 20px;
-    line-height: 30px;
-  }
-
-  ul.menu li:hover {
-    background-color: #e8e8e8;
-  }
-
-  span.label {
-    display: inline-block;
-    font-size: 20px;
-    margin-left: 20px;
-    width: 80px;
-  }
-
-  .templateElement {
-    z-index: 99;
-  }
-
-  .el-table td, .el-table th {
-    text-align: center;
-  }
 
 </style>

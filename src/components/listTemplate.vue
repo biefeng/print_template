@@ -16,13 +16,23 @@
     </el-table-column>
     <el-table-column
       prop="address"
-      width="200"
+      width="160"
       label="绑定设备">
     </el-table-column>
     <el-table-column
       prop="address"
-      label="操作" width="120">
-      <router-link v-bind:to="'printerTemplate'" >编辑</router-link>
+      label="操作" width="160">
+      <template slot-scope="scope">
+        <el-button
+          size="mini"
+          @click="editTemplatePage(scope.$index, scope.row)">编辑
+        </el-button>
+        <el-button
+          size="mini"
+          type="danger"
+          @click="handleDelete(scope.$index, scope.row)">删除
+        </el-button>
+      </template>
     </el-table-column>
   </el-table>
 </template>
@@ -39,6 +49,15 @@
       this.$http.get("http://localhost:7538/template/list").then(res => {
         this.templates = res.data;
       })
+    }, methods: {
+      editTemplatePage(index, row) {
+        this.$router.push({
+          name: "editTemplate", params: {
+            index: index,
+            row: row
+          }
+        })
+      }
     }
   }
 </script>
