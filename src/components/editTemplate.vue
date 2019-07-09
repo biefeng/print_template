@@ -1,12 +1,5 @@
 <template>
   <div id="printerTemplate">
-    <!--<ul id="templateList"
-        style="width: 200px;border: 1px solid red;list-style: none;padding-left: 0px;background-color: darkgrey;">
-      <li :index="index" style="border-bottom:1px solid  aliceblue;padding-left: 30px"
-          v-for=" (template,index) in templates">
-        <span>{{template.templateName }}</span>
-      </li>
-    </ul>-->
     <ul id="editEleMenu" class="menu" v-show="this.attachEle">
       <li v-show="this.contentType==='text'" @mousedown="openDialog">编辑文本</li>
       <li v-show="this.contentType==='barCode'" @mousedown="openDialog">编辑条形码</li>
@@ -18,15 +11,15 @@
       e.stopPropagation()
       }" @mouseenter="openContentTypeSelect" @mouseleave="closeContentTypeSelect">添加元素
       </li>
+      <li @mousedown="clearTemplateArea">清除元素</li>
     </ul>
 
     <ul id="contentTypeSelect" class="menu" v-show="this.contentTypeSelectVisible">
       <li @mousedown="appendElement('text')">文本</li>
       <li @mousedown="appendElement('barCode')">条形码</li>
-      <li>二维码</li>
-      <li>图片</li>
+      <li @mousedown="appendElement('barCode')">条形码</li>
+      <li @mousedown="appendElement('barCode')">条形码</li>
     </ul>
-    <!--<el-button type="primary" @click="editTemplateDialogVisible =true">编辑模板区域</el-button>-->
     <el-dialog
       title="提示"
       :visible.sync="editTemplateDialogVisible"
@@ -43,20 +36,13 @@
       </span>
     </el-dialog>
     <br/>
-    <!--<el-select v-model="contentType" clearable placeholder="文本">
-      <el-option
-        v-for="item in contentTypeSelect"
-        :key="item.value"
-        :label="item.label"
-        :value="item.value">
-      </el-option>
-    </el-select>
-    <el-button type="primary" @click="appendElement">添加元素</el-button>-->
-    <el-button type="primary" @click="submitTemplate">生成模板</el-button>
+    <el-button style="position: relative;margin: 5px 0px 10px 685px;display:inline-block;" type="primary"
+               @click="submitTemplate">保存模板
+    </el-button>
+    <el-button style="position: relative;display:inline-block;" type="primary" @click="submitTemplate">返回</el-button>
     <div id="templateArea"
-         style="position: relative ;margin: 100px auto;width: 450px;height: 220px;border: 1px solid red;background-color: rgba(218,250,238,0.14)">
+         style="position: relative;margin: 10px auto;width: 450px;height: 220px;border: 3px solid #a3a3a3;background-color: rgba(218,250,238,0.14)">
     </div>
-
     <el-dialog title="编辑格式" :visible.sync="centerDialogVisible" width="30%" center>
       <span style="display: block;margin-top: 10px;">
         <span class="label">水平定位</span>
@@ -183,6 +169,9 @@
         horizenPosition: 0,
         verticalPosition: 0,
         template: {},
+        templateName: '',
+        printerType: 0,
+        printMode: 0,
         contentTypeSelect: [{
           value: 'text',
           label: '文本'
@@ -316,22 +305,20 @@
       let contentTyleSelect = document.getElementById("contentTypeSelect");
       //设置false，禁止子元素进行捕获
       contentTyleSelect.addEventListener("mouseleave", this.closeContentTypeSelect, {capture: false})
+
+      //接收参数
+      this.printMode = this.$route.params.printMode
+      this.printerType = this.$route.params.printerType
       this.loadTemplates(this.$route.params.row)
     },
     updated() {
-      /*let templateList = document.getElementById("templateList");
-      let loadTemplates = this.loadTemplates
-      for (let i = 0; i < templateList.children.length; i++) {
-        let child = templateList.children[i]
-        child.addEventListener("click", function () {
-          loadTemplates(child.getAttribute("index"))
-        })
-      }*/
+    },
+    created() {
+      document.addEventListener('keydown', this.moveByDirectKey)
     },
     methods: {
       /*加载模板，即预览功能*/
       loadTemplates(template) {
-        //闭包实现参数绑定
         if (template) {
           let templates = this.templates
           let templateAreaDiv = document.getElementById("templateArea")
@@ -357,27 +344,28 @@
         let templateAreaDiv = document.getElementById("templateArea");
         var x = e.pageX;
         var y = e.pageY;
-        //drag事件最后一刻，无法读取鼠标的坐标，pageX和pageY都变为0
         if (x == 0 && y == 0) {
-          return; //不处理拖动最后一刻X和Y都为0的情形
+          return;
         }
         const leftBoundary = templateAreaDiv.offsetLeft
         const topBoundary = templateAreaDiv.offsetTop
-        x = x - this.selectedEle.offsetX - leftBoundary;
-        if (x < 0)
-          x = 0
-        y = y - this.selectedEle.offsetY - topBoundary;
-        if (y < 0)
-          y = 0
-        let dragImageDiv = e.currentTarget;
-        if (y > templateAreaDiv.offsetHeight - dragImageDiv.offsetHeight) {
-          y = templateAreaDiv.offsetHeight - dragImageDiv.offsetHeight
+        let dragDiv = e.currentTarget;
+        let clientRect = dragDiv.getBoundingClientRect();
+        x = x - this.selectedEle.offsetX - leftBoundary - (dragDiv.offsetWidth - clientRect.width) / 2;
+        if (x < 0 - (dragDiv.offsetWidth - clientRect.width) / 2)
+          x = 0 - (dragDiv.offsetWidth - clientRect.width) / 2
+        y = y - this.selectedEle.offsetY - topBoundary - (dragDiv.offsetHeight - clientRect.height) / 2;
+        if (y <= 0 - (dragDiv.offsetHeight - clientRect.height) / 2)
+          y = 0 - (dragDiv.offsetHeight - clientRect.height) / 2
+
+        if (y > templateAreaDiv.offsetHeight - clientRect.height - (dragDiv.offsetHeight - clientRect.height) / 2) {
+          y = templateAreaDiv.offsetHeight - 4 - clientRect.height - (dragDiv.offsetHeight - clientRect.height) / 2
         }
-        if (x > templateAreaDiv.offsetWidth - dragImageDiv.offsetWidth) {
-          x = templateAreaDiv.offsetWidth - dragImageDiv.offsetWidth
+        if (x > templateAreaDiv.offsetWidth - clientRect.width - (dragDiv.offsetWidth - clientRect.width) / 2) {
+          x = templateAreaDiv.offsetWidth - 4 - clientRect.width - (dragDiv.offsetWidth - clientRect.width) / 2
         }
-        dragImageDiv.style.left = x + 'px';
-        dragImageDiv.style.top = y + 'px';
+        dragDiv.style.left = x + 'px';
+        dragDiv.style.top = y + 'px';
       },
       ondragend() {
 
@@ -392,6 +380,7 @@
           preSelected.removeEventListener("drag", this.ondrag, true)
           classList.remove("selectedEle")
         }
+        selected.onkeydown = this.moveByDirectKey
         selected.addEventListener("drag", this.ondrag, true)
         selected.addEventListener("dragstart", this.ondragstart, true)
         let tmp = selected.style
@@ -530,8 +519,6 @@
           editMenuUl.style.position = "absolute"
           editMenuUl.style.left = _x + "px";
           editMenuUl.style.top = _y + "px";
-          editMenuUl.style.listStyle = "none"
-          editMenuUl.style.border = "1px solid black"
           document.addEventListener("mousedown", this.closeMenu, false)
         }
       },
@@ -591,11 +578,6 @@
             selected.fontWidth = this.fontWidth
             selected.fontHeight = this.fontHeight
             selected.innerText = this.exampleData
-            /*this.valueName = undefined
-            this.fontType = undefined
-            this.fontWidth = undefined
-            this.fontHeight = undefined
-            this.exampleData = undefined*/
           } else if (contentType === 'barCode') {
             selected.barCodeType = this.barCodeType
             selected.barCodeHeight = parseInt(this.barCodeHeight)
@@ -623,18 +605,19 @@
         templateAreaDiv.style.height = this.printAreaHeight + 'px'
       },
       openContentTypeSelect(e) {
-
         let contentTypeSelect = document.getElementById("contentTypeSelect");
         let currentTarget = e.currentTarget;
         let parent = currentTarget.offsetParent;
         let index = 0
-        parent.childNodes.forEach(e => {
+
+        for (let i = 0; i < parent.childNodes.length; i++) {
+          let e = parent.childNodes[i]
           if (e.tagName === 'LI')
             index++
           if (e == currentTarget) {
-            return
+            break
           }
-        })
+        }
         contentTypeSelect.style.position = 'absolute'
         contentTypeSelect.style.left = parent.offsetLeft + parent.offsetWidth + 'px'
         contentTypeSelect.style.top = parent.offsetTop + currentTarget.offsetHeight * (index - 1) + 'px'
@@ -648,46 +631,72 @@
             this.contentTypeSelectVisible = true
           }
         }
+      },
+      clearTemplateArea(e) {
+        let templateAreaDiv = document.getElementById("templateArea");
+        templateAreaDiv.innerHTML = "";
+      },
+      moveByDirectKey(e) {
+        let selectedEle = document.getElementsByClassName("selectedEle")[0];
+        let templateAreaDiv = document.getElementById("templateArea");
+        var e = window.event || e;
+        switch (e.keyCode) {
+          case 37: //左
+            selectedEle.style.left = Math.max(0, selectedEle.offsetLeft - 1) + "px";
+            break;
+          case 38: //上
+            selectedEle.style.top = Math.max(0, selectedEle.offsetTop - 1) + "px";
+            break;
+          case 39:  //右
+            selectedEle.style.left = Math.min(templateAreaDiv.offsetWidth - 4 - selectedEle.offsetWidth, selectedEle.offsetLeft + 1) + "px";
+            break;
+          case 40:  //下
+            selectedEle.style.top = Math.min(templateAreaDiv.offsetHeight - 4 - selectedEle.offsetHeight, selectedEle.offsetTop + 1) + "px";
+            break;
+        }
       }
     }
   }
 </script>
 
 <style scoped>
-
-
-  ul.menu {
-    z-index: 100;
-    cursor: default;
-    width: 150px;
-    background-color: white;
-    border-right: none;
-    -moz-box-shadow:  0px 5px 5px #333333;
-    -webkit-box-shadow:  0px 5px 5px #333333;
-    box-shadow: 0px 5px 5px #333333;
-    padding-left: 0px;
-    list-style: none;
-    margin: 0px;
-  }
-
   span.label {
     display: inline-block;
     font-size: 20px;
     margin-left: 20px;
     width: 80px;
   }
+</style>
+
+<style>
+
+  ul.menu {
+    z-index: 100;
+    cursor: default;
+    width: 150px;
+    background-color: white;
+    border-left: 1px solid #d1d1d1;
+    border-top: 1px solid #d1d1d1;
+    -moz-box-shadow: 0px 5px 5px #333333;
+    -webkit-box-shadow: 0px 5px 5px #333333;
+    box-shadow: 2px 2px 2px #b5b5b5;
+    padding-left: 0px;
+    list-style: none;
+    margin: 0px;
+  }
+
 
   ul.menu li:hover {
     background-color: #e8e8e8;
   }
 
   ul.menu li {
-    height: 30px;
-    font-size: 20px;
+    height: 28px;
+    font-size: 15px;
     font-weight: 500;
     vertical-align: center;
     padding-left: 20px;
-    line-height: 30px;
+    line-height: 28px;
   }
 
   .selectedEle {

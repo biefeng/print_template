@@ -202,8 +202,8 @@
       },
       ondragstart(e) {
         //记录起始位置
-        this.selectedEle.offsetX = e.offsetX;
-        this.selectedEle.offsetY = e.offsetY;
+        this.selectedEle.offsetX = e.currentTarget.offsetLeft;
+        this.selectedEle.offsetY = e.currentTarget.offsetTop;
       },
       ondrag(e) {
         let templateAreaDiv = document.getElementById("templateArea");
