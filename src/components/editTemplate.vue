@@ -339,11 +339,14 @@
         //记录起始位置
         this.selectedEle.offsetX = e.offsetX;
         this.selectedEle.offsetY = e.offsetY;
+        e.dataTransfer.effectAllowed = "none"
       },
       ondrag(e) {
         let templateAreaDiv = document.getElementById("templateArea");
         var x = e.pageX;
         var y = e.pageY;
+
+        console.log(e.dataTransfer.effectAllowed)
         if (x == 0 && y == 0) {
           return;
         }
@@ -365,7 +368,7 @@
           x = templateAreaDiv.offsetWidth - 4 - clientRect.width - (dragDiv.offsetWidth - clientRect.width) / 2
         }
         dragDiv.style.left = x + 'px';
-        dragDiv.style.top = y + 'px';
+        //dragDiv.style.top = y + 'px';
       },
       ondragend() {
 
@@ -434,6 +437,7 @@
         childElement.verticalPosition = DEFAULT_VERTICAL_POS
         childElement.style.top = DEFAULT_VERTICAL_POS + "px"
         childElement.style.left = DEFAULT_HORIZEN_POS + "px"
+        //childElement.draggable=false
         childElement.addEventListener("click", this.selectedElement, true)
         childElement.addEventListener("contextmenu", this.popMenu)
         childElement.classList.add("templateElement");
