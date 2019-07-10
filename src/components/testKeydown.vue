@@ -30,8 +30,8 @@
         this.position.currentCursorPositionY = e.pageY
       },
       removeEvent(e) {
-        this.position.currentPositionX = e.pageX - this.position.currentCursorPositionX + this.position.currentPositionX
-        this.position.currentPositionY = e.pageY - this.position.currentCursorPositionY + this.position.currentPositionY
+        this.position.currentPositionX=e.pageX- this.position.currentCursorPositionX+ this.position.currentPositionX
+        this.position.currentPositionY=e.pageY- this.position.currentCursorPositionY+ this.position.currentPositionY
         document.removeEventListener("mousemove", this.moveElement)
       }
     },
