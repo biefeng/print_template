@@ -27,11 +27,15 @@
       :visible.sync="editTemplateDialogVisible"
       width="30%"
       center>
-      <span style="display: block;margin-bottom: 10px"><p style="display: inline;margin-right: 20px">宽度</p><el-input
-        style="width: 300px" v-model="printAreaWidth" placeholder="打印区域宽度"></el-input></span>
-      <span style="display: block"><p style="display: inline;margin-right: 20px">高度</p><el-input style="width: 300px"
-                                                                                                 v-model="printAreaHeight"
-                                                                                                 placeholder="打印区域高度"></el-input></span>
+      <div class="prop-div">
+        <span class="label">宽度</span>
+        <el-input
+          style="width: 120px" v-model="printAreaWidth" placeholder="打印区域宽度"></el-input>
+      </div>
+      <div class="prop-div">
+        <span class="label">高度</span>
+        <el-input style="width: 120px" v-model="printAreaHeight" placeholder="打印区域高度"></el-input>
+      </div>
       <span slot="footer" class="dialog-footer">
         <el-button @click="editTemplateDialogVisible = false">取 消</el-button>
         <el-button type="primary" @click="closeEditTemplateDialog">确 定</el-button>
@@ -46,93 +50,108 @@
          style="position: relative;margin: 10px auto;width: 450px;height: 220px;border: 3px solid #a3a3a3;background-color: rgba(218,250,238,0.14)">
     </div>
     <el-dialog title="编辑格式" :visible.sync="centerDialogVisible" width="30%" center>
-      <span style="display: block;margin-top: 10px;">
-        <span class="label">水平定位</span>
-        <el-input v-model="horizenPosition" style="width: 120px;margin-left: 10px" placeholder="请输入内容"></el-input>
-        <span class="label">垂直定位</span>
-        <el-input v-model="verticalPosition" style="width: 120px;margin-left: 10px" placeholder="请输入内容"></el-input>
-      </span>
-      <span style="display: block;margin-top: 10px;">
-        <span class="label">键</span>
-        <el-input v-model="valueName" style="width: 120px;margin-left: 10px" placeholder="请输入内容"></el-input>
-        <span class="label">值</span>
-        <el-input v-model="exampleData" style="width: 120px;margin-left: 10px" placeholder="请输入内容"></el-input>
-      </span>
-      <span v-show="this.contentType==='text'" style="display: block">
-        <span class="label">字宽：</span>
-        <el-select style="width:120px;margin-left: 10px" v-model="fontWidth" placeholder="请选择">
-          <el-option
-            v-for="item in fontWidthSelect"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value">
-          </el-option>
-        </el-select>
-        <span class="label">字高</span>
-        <el-select v-model="fontHeight" style="width:120px;margin-left: 10px; " placeholder="请选择">
-          <el-option
-            v-for="item in fontHeightSelect"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value">
-          </el-option>
-        </el-select>
-      </span>
-      <span v-show="contentType==='text'" style="display: block;margin-top: 10px;">
-        <span class="label">字体</span>
-        <el-select style="width:120px;margin-left: 10px" v-model="fontType" placeholder="请选择">
-          <el-option
-            v-for="item in fontTypeSelect"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value">
-          </el-option>
-        </el-select>
-      </span>
-      <span v-show="this.contentType==='barCode'" style="display: block;margin-top: 10px;">
-        <span class="label">线条宽度</span>
-        <el-select v-model="barCodeWidth" style="width:120px;margin-left: 10px" placeholder="请选择">
-          <el-option
-            v-for="item in barCodeWidthSelect"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value">
-          </el-option>
-        </el-select>
-        <span class="label">条码高度</span>
-        <el-input v-model="barCodeHeight" style="width: 120px;margin-left: 10px" placeholder="请输入内容"></el-input>
-      </span>
-      <span v-show="this.contentType==='barCode'" style="display: block;margin-top: 10px;">
-        <span class="label">条码类型</span>
-        <el-select v-model="barCodeType" style="width:120px;margin-left: 10px" placeholder="请选择">
-          <el-option
-            v-for="item in barCodeTypeSelect"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value">
-          </el-option>
-        </el-select>
-        <span class="label">显示数据</span>
-        <el-select v-model="displayBarCodeValue" style="width:120px;margin-left: 10px" placeholder="请选择">
-          <el-option
-            v-for="item in displayBarCodeValueSelect"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value">
-          </el-option>
-        </el-select>
-      </span>
-      <span v-show="this.contentType==='barCode' && this.displayBarCodeValue==true"
-            style="display: block;margin-top: 10px;">
-        <span class="label">数据位置</span>
-        <el-select v-model="barCodeValuePosition" style="width:120px;margin-left: 10px" placeholder="请选择">
-          <el-option
-            v-for="item in barCodeValuePositionSelect"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value">
-          </el-option>
-        </el-select>
+      <span style="/*display: block;*/margin-top: 10px;">
+        <div class="prop-div">
+          <span class="label">水平定位</span>
+          <el-input v-model="horizenPosition" style="width: 120px;margin-left: 10px" placeholder="请输入内容"></el-input>
+        </div>
+        <div class="prop-div">
+          <span class="label">垂直定位</span>
+          <el-input v-model="verticalPosition" style="width: 120px;margin-left: 10px" placeholder="请输入内容"></el-input>
+        </div>
+        <div class="prop-div" v-show="printMode==1">
+          <span class="label">行高</span>
+          <el-input v-model="lineHeight" style="width: 120px;margin-left: 10px" placeholder="请输入内容"></el-input>
+        </div>
+        <div class="prop-div">
+          <span class="label">键</span>
+          <el-input v-model="valueName" style="width: 120px;margin-left: 10px" placeholder="请输入内容"></el-input>
+        </div>
+        <div class="prop-div">
+          <span class="label">值</span>
+          <el-input v-model="exampleData" style="width: 120px;margin-left: 10px" placeholder="请输入内容"></el-input>
+        </div>
+        <div class="prop-div" v-show="this.contentType==='text'">
+          <span class="label">字宽：</span>
+          <el-select style="width:120px;margin-left: 10px" v-model="fontWidth" placeholder="请选择">
+            <el-option
+              v-for="item in fontWidthSelect"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value">
+            </el-option>
+          </el-select>
+        </div>
+        <div class="prop-div" v-show="this.contentType==='text'">
+          <span class="label">字高</span>
+          <el-select v-model="fontHeight" style="width:120px;margin-left: 10px; " placeholder="请选择">
+            <el-option
+              v-for="item in fontHeightSelect"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value">
+            </el-option>
+          </el-select>
+        </div>
+        <div class="prop-div" v-show="contentType==='text'">
+          <span class="label">字体</span>
+          <el-select style="width:120px;margin-left: 10px" v-model="fontType" placeholder="请选择">
+            <el-option
+              v-for="item in fontTypeSelect"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value">
+            </el-option>
+          </el-select>
+        </div>
+        <div class="prop-div" v-show="this.contentType==='barCode'">
+          <span class="label">线条宽度</span>
+          <el-select v-model="barCodeWidth" style="width:120px;margin-left: 10px" placeholder="请选择">
+            <el-option
+              v-for="item in barCodeWidthSelect"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value">
+            </el-option>
+          </el-select>
+        </div>
+        <div class="prop-div" v-show="this.contentType==='barCode'">
+          <span class="label">条码高度</span>
+          <el-input v-model="barCodeHeight" style="width: 120px;margin-left: 10px" placeholder="请输入内容"></el-input>
+        </div>
+        <div class="prop-div" v-show="this.contentType==='barCode'">
+          <span class="label">条码类型</span>
+          <el-select v-model="barCodeType" style="width:120px;margin-left: 10px" placeholder="请选择">
+            <el-option
+              v-for="item in barCodeTypeSelect"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value">
+            </el-option>
+          </el-select>
+        </div>
+        <div class="prop-div" v-show="this.contentType==='barCode'" style="display: inline-block;margin-top: 10px;">
+          <span class="label">显示数据</span>
+          <el-select v-model="displayBarCodeValue" style="width:120px;margin-left: 10px" placeholder="请选择">
+            <el-option
+              v-for="item in displayBarCodeValueSelect"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value">
+            </el-option>
+          </el-select>
+        </div>
+        <div class="prop-div" v-show="this.contentType==='barCode' && this.displayBarCodeValue==true">
+          <span class="label">数据位置</span>
+          <el-select v-model="barCodeValuePosition" style="width:120px;margin-left: 10px" placeholder="请选择">
+            <el-option
+              v-for="item in barCodeValuePositionSelect"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value">
+            </el-option>
+          </el-select>
+        </div>
       </span>
       <span slot="footer" class="dialog-footer">
         <el-button @click="closeDialog('cancel')">取 消</el-button>
@@ -309,8 +328,8 @@
       contentTyleSelect.addEventListener("mouseleave", this.closeContentTypeSelect, {capture: false})
 
       //接收参数
-      this.printMode = this.$route.params.printMode
-      this.printerType = this.$route.params.printerType
+      this.printMode = this.$route.params.printMode ? this.$route.params.printMode : this.printMode
+      this.printerType = this.$route.params.printerType ? this.$route.params.printerType : this.printerType
       this.loadTemplates(this.$route.params.row)
     },
     updated() {
@@ -424,7 +443,7 @@
             childElement.exampleData = 'Hello!'
             JsBarCode(childElement, childElement.exampleData, {
               format: this.barCodeType,
-              lineColor: "#0aa",
+              lineColor: "black",
               width: 2,
               height: this.barCodeHeight,
               displayValue: true
@@ -707,15 +726,17 @@
   .selectedEle {
     z-index: 99;
     background-color: #f1f1f1;
+    -moz-box-shadow: 2px 2px 5px #333333;
+    -webkit-box-shadow: 2px 2px 5px #333333;
+    box-shadow: 2px 2px 5px #333333;
   }
 
   .templateElement {
     z-index: 99;
   }
 
-  img.selectedEle {
-    -moz-box-shadow: 2px 2px 5px #333333;
-    -webkit-box-shadow: 2px 2px 5px #333333;
-    box-shadow: 2px 2px 5px #333333;
+  div.prop-div {
+    display: inline-block;
+    margin-top: 10px;
   }
 </style>
