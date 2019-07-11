@@ -11,13 +11,15 @@
       e.stopPropagation()
       }" @mouseenter="openContentTypeSelect" @mouseleave="closeContentTypeSelect">添加元素
       </li>
+      <el-tooltip class="item" effect="light" content="从当前选定的元素开始生效，但不影响其以上的元素。" placement="right">
+        <li>设置行高</li>
+      </el-tooltip>
+
       <li @mousedown="clearTemplateArea">清除元素</li>
     </ul>
 
     <ul id="contentTypeSelect" class="menu" v-show="this.contentTypeSelectVisible">
       <li @mousedown="appendElement('text')">文本</li>
-      <li @mousedown="appendElement('barCode')">条形码</li>
-      <li @mousedown="appendElement('barCode')">条形码</li>
       <li @mousedown="appendElement('barCode')">条形码</li>
     </ul>
     <el-dialog
