@@ -189,6 +189,7 @@
         contentTypeSelectVisible: false,
         horizenPosition: 0,
         verticalPosition: 0,
+        lineHeight: 20,
         template: {},
         templateName: '',
         printerType: 0,
@@ -362,6 +363,7 @@
         this.selectedEle.offsetY = e.offsetY;
       },
       ondrag(e) {
+        console.log(e.movementX)
         let templateAreaDiv = document.getElementById("templateArea");
         var x = e.pageX;
         var y = e.pageY;
@@ -375,7 +377,7 @@
         x = x - this.selectedEle.offsetX - leftBoundary - (dragDiv.offsetWidth - clientRect.width) / 2;
         if (x < 0 - (dragDiv.offsetWidth - clientRect.width) / 2)
           x = 0 - (dragDiv.offsetWidth - clientRect.width) / 2
-        y = y - this.selectedEle.offsetY - topBoundary - (dragDiv.offsetHeight - clientRect.height) / 2;
+        y = y - this.selectedEle.offsetY - topBoundary /*- (dragDiv.offsetHeight - clientRect.height) / 2*/;
         if (y <= 0 - (dragDiv.offsetHeight - clientRect.height) / 2)
           y = 0 - (dragDiv.offsetHeight - clientRect.height) / 2
 
@@ -462,6 +464,13 @@
         childElement.addEventListener("contextmenu", this.popMenu)
         childElement.classList.add("templateElement");
         childElement.classList.add("selectedEle");
+        //
+        setTimeout(function () {
+          let selected = document.getElementsByClassName("selectedEle")[0];
+          let clientRect = selected.getBoundingClientRect();
+          selected.style.left = selected.horizenPosition - (selected.offsetWidth - clientRect.width) / 2 + "px"
+          selected.style.top = selected.verticalPosition - (selected.offsetHeight - clientRect.height) / 2 + "px"
+        }, 0)
         templateAreaDiv.appendChild(childElement)
       },
       deleteElement() {
@@ -588,8 +597,9 @@
         this.centerDialogVisible = false
         if (flag && flag === 'apply') {
           let selected = document.getElementsByClassName("selectedEle")[0];
-          selected.style.left = this.horizenPosition + "px"
-          selected.style.top = this.verticalPosition + "px"
+          let clientRect = selected.getBoundingClientRect();
+          selected.style.left = this.horizenPosition - (selected.offsetWidth - clientRect.width) / 2 + "px"
+          selected.style.top = this.verticalPosition - (selected.offsetHeight - clientRect.height) / 2 + "px"
           selected.horizenPosition = this.horizenPosition
           selected.verticalPosition = this.verticalPosition
           selected.exampleData = this.exampleData
