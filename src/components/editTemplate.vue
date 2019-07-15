@@ -45,7 +45,8 @@
     <el-button style="position: relative;margin: 5px 0px 10px 685px;display:inline-block;" type="primary"
                @click="submitTemplate">保存模板
     </el-button>
-    <el-button style="position: relative;display:inline-block;" type="primary" @click="submitTemplate">返回</el-button>
+    <el-button style="position: relative;display:inline-block;" type="primary" @click="e=>{this.$router.back()}">返回
+    </el-button>
     <div id="templateArea"
          style="position: relative;margin: 10px auto;width: 450px;height: 220px;border: 3px solid #a3a3a3;background-color: rgba(218,250,238,0.14)">
     </div>
@@ -164,6 +165,7 @@
 <script>
   import draggable from 'vuedraggable'
   import JsBarCode from 'jsbarcode'
+
 
   const FONT_WIDTH = 0
   const FONT_HEIGHT = 0
@@ -358,9 +360,16 @@
         }
       },
       ondragstart(e) {
+        let selected = document.getElementsByClassName("selectedEle")[0];
+        let clientRect = selected.getBoundingClientRect();
+        let offsetX = selected.offsetX;
+
+        this.selectedEle.offsetX = selected.offsetLeft
+        this.selectedEle.offsetY = selected.offsetTop
+
         //记录起始位置
-        this.selectedEle.offsetX = e.offsetX;
-        this.selectedEle.offsetY = e.offsetY;
+        this.selectedEle.offsetX_cursor = e.pageX;
+        this.selectedEle.offsetY_cursor = e.pageY;
       },
       ondrag(e) {
         console.log(e.movementX)
@@ -370,14 +379,12 @@
         if (x == 0 && y == 0) {
           return;
         }
-        const leftBoundary = templateAreaDiv.offsetLeft
-        const topBoundary = templateAreaDiv.offsetTop
         let dragDiv = e.currentTarget;
         let clientRect = dragDiv.getBoundingClientRect();
-        x = x - this.selectedEle.offsetX - leftBoundary - (dragDiv.offsetWidth - clientRect.width) / 2;
+        x = this.selectedEle.offsetX + x - this.selectedEle.offsetX_cursor
         if (x < 0 - (dragDiv.offsetWidth - clientRect.width) / 2)
           x = 0 - (dragDiv.offsetWidth - clientRect.width) / 2
-        y = y - this.selectedEle.offsetY - topBoundary /*- (dragDiv.offsetHeight - clientRect.height) / 2*/;
+        y = this.selectedEle.offsetY + y - this.selectedEle.offsetY_cursor
         if (y <= 0 - (dragDiv.offsetHeight - clientRect.height) / 2)
           y = 0 - (dragDiv.offsetHeight - clientRect.height) / 2
 
@@ -517,7 +524,7 @@
           }
           this.addedEle.push(tmp)
         })
-        this.$http.post("http://localhost:7538/template/post", {
+        this.$http.post("http://localhost:7538/template/print", {
           "elements": this.addedEle,
           "printWidth": templateAreaDiv.clientWidth,
           "printHeight": templateAreaDiv.clientHeight,

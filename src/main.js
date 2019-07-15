@@ -6,13 +6,12 @@ import router from './router'
 import ElementUI from 'element-ui'
 import "element-ui/lib/theme-chalk/index.css";
 import axios from './util/axios'
+import PlainDraggable from './util/hh'
 
 Vue.config.productionTip = false
-
 Vue.use(ElementUI)
-
-Vue.prototype.$http=axios
-
+Vue.prototype.$http = axios
+console.log(11111)
 /* eslint-disable no-new */
 new Vue({
   el: '#app',

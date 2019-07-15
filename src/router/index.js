@@ -3,6 +3,7 @@ import Router from 'vue-router'
 import editTemplate from '@/components/editTemplate'
 import listTemplate from '@/components/listTemplate'
 import testKeydown from '@/components/testKeydown'
+import draggable from '@/components/draggable'
 
 Vue.use(Router)
 
@@ -22,6 +23,11 @@ export default new Router({
       path: '/testKeydown',
       name: 'testKeydown',
       component: testKeydown
+    },
+    {
+      path: '/draggable',
+      name: 'draggable',
+      component: draggable
     }
   ]
 })
