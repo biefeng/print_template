@@ -1,27 +1,37 @@
 <template>
-  <div id="printerTemplate">
+  <div id="edit">
     <ul id="editEleMenu" class="menu" v-show="this.attachEle">
       <li v-show="this.contentType==='text'" @mousedown="openDialog">编辑文本</li>
       <li v-show="this.contentType==='barCode'" @mousedown="openDialog">编辑条形码</li>
+      <li v-show="this.contentType==='area'" @mousedown="openDialog">编辑区域</li>
       <li @mousedown="deleteElement">删除元素</li>
     </ul>
     <ul id="editTemMenu" class="menu" v-show="this.editTemMenuVisible">
-      <li @mousedown="editTemplateDialogVisible =true">编辑模板区域</li>
+      <li @mousedown="editTemplateDialogVisible =true">编辑模板</li>
       <li @mousedown="function(e) {
       e.stopPropagation()
       }" @mouseenter="openContentTypeSelect" @mouseleave="closeContentTypeSelect">添加元素
       </li>
-      <el-tooltip class="item" effect="light" content="从当前选定的元素开始生效，但不影响其以上的元素。" placement="right">
+      <!--<el-tooltip class="item" effect="light" content="从当前选定的元素开始生效，但不影响其以上的元素。" placement="right">
         <li>设置行高</li>
-      </el-tooltip>
-
+      </el-tooltip>-->
       <li @mousedown="clearTemplateArea">清除元素</li>
     </ul>
 
     <ul id="contentTypeSelect" class="menu" v-show="this.contentTypeSelectVisible">
-      <li @mousedown="appendElement('text')">文本</li>
-      <li @mousedown="appendElement('barCode')">条形码</li>
+      <li @mousedown="appendElement1('area')">页面</li>
+      <li @mousedown="appendElement1('text')">文本</li>
+      <li @mousedown="appendElement1('barCode')">条形码</li>
     </ul>
+
+    <div id="template" ref="template"
+         style="position: relative;margin: 10px auto;width: 450px;min-height: 220px;border: 3px solid #a3a3a3;background-color: rgba(218,250,238,0.14);padding-bottom: 100px">
+
+    </div>
+
+    <!--***********************-->
+
+
     <el-dialog
       title="提示"
       :visible.sync="editTemplateDialogVisible"
@@ -47,9 +57,9 @@
     </el-button>
     <el-button style="position: relative;display:inline-block;" type="primary" @click="e=>{this.$router.back()}">返回
     </el-button>
-    <div id="templateArea"
+    <!--<div id="templateArea"
          style="position: relative;margin: 10px auto;width: 450px;height: 220px;border: 3px solid #a3a3a3;background-color: rgba(218,250,238,0.14)">
-    </div>
+    </div>-->
     <el-dialog title="编辑格式" :visible.sync="centerDialogVisible" width="30%" center>
       <span style="/*display: block;*/margin-top: 10px;">
         <div class="prop-div">
@@ -163,7 +173,7 @@
 </template>
 
 <script>
-  import draggable from 'vuedraggable'
+  import Sortable from 'sortablejs'
   import JsBarCode from 'jsbarcode'
 
 
@@ -177,11 +187,11 @@
   const BARCODE_POS = 'bottom'
   const DEFAULT_HORIZEN_POS = 100
   const DEFAULT_VERTICAL_POS = 100
+  const DEFAULT_HEIGHT = 100
 
-
+  var index = 1
   export default {
-    "components": {draggable},
-    name: 'printerTemplate',
+    name: 'edit',
     data() {
       return {
         centerDialogVisible: false,
@@ -321,14 +331,15 @@
         printAreaHeight: 600
       }
     },
+    updated() {
+    },
     mounted() {
-      let templateAreaDiv = document.getElementById("templateArea");
-      templateAreaDiv.style.width = this.printAreaWidth + 'px'
-      templateAreaDiv.style.height = this.printAreaHeight + 'px'
+      let templateAreaDiv = document.getElementById("template");
       templateAreaDiv.addEventListener("contextmenu", this.popTemplateMenu)
       let contentTyleSelect = document.getElementById("contentTypeSelect");
       //设置false，禁止子元素进行捕获
       contentTyleSelect.addEventListener("mouseleave", this.closeContentTypeSelect, {capture: false})
+
 
       //接收参数
       this.printMode = this.$route.params.printMode ? this.$route.params.printMode : this.printMode
@@ -358,6 +369,63 @@
             collection[i].addEventListener("contextmenu", this.popMenu)
           }
         }
+      },
+      appendElement1(type) {
+        let template = document.getElementById("template");
+        let selectedEle = document.getElementsByClassName("selectedEle")[0];
+        if (selectedEle) {
+          selectedEle.classList.remove("selectedEle")
+        }
+        let element = document.createElement("div");
+        element.style.height = DEFAULT_HEIGHT + "px"
+        element.style.lineHeight = DEFAULT_HEIGHT + "px"
+        element.style.position = 'relative'
+        element.style.backgroundColor = 'yellow'
+        element.style.width = "100%"
+        element.classList.add("selectedEle")
+        element.addEventListener("contextmenu", this.popMenu)
+
+
+        switch (type) {
+          case 'area':
+            element.setAttribute("type", "area")
+            let child = document.createElement("div")
+            child.classList.add("draggableFlag", "draggableEle")
+            child.style.width = "50px"
+            child.style.height = "50px"
+            child.innerText = index++
+            child.zIndex = 10
+            element.appendChild(child)
+            break
+          case  'text':
+            element.setAttribute("type", "text")
+            let htmlElement = document.createElement("span");
+            let textSpan = htmlElement;
+            textSpan.style.display = "inline-block"
+            textSpan.style.margin = "auto"
+            textSpan.classList.add("draggableFlag")
+            textSpan.innerText = "Hello World"
+            element.appendChild(textSpan)
+
+          //element.style =element.style+"/*position: absolute;*/cursor:default;transform:scaleX(1.5);font-weight:bolder;text-align:center;vertical-align:center;font-size:13px;padding:0px 10px"
+        }
+
+
+        template.appendChild(element)
+
+
+        new Sortable(template, {
+          animation: 200
+        })
+        let draggableElements = Array.prototype.slice.call(document.getElementsByClassName("draggableFlag"));
+        draggableElements.forEach(e => {
+          let draggable = new PlainDraggable(e);
+          console.log(e.parentElement)
+          draggable.onMove = function (p) {
+            console.log('left: %d top %d', p.left - template.offsetLeft - e.parentElement.offsetLeft, p.top - template.offsetTop - e.parentElement.offsetTop)
+          }
+        })
+
       },
       ondragstart(e) {
         let selected = document.getElementsByClassName("selectedEle")[0];
@@ -481,7 +549,7 @@
         templateAreaDiv.appendChild(childElement)
       },
       deleteElement() {
-        let templateAreaDiv = document.getElementById("templateArea")
+        let template = document.getElementById("template")
         let htmlCollection = document.getElementsByClassName("selectedEle");
         if (htmlCollection.length == 0) {
           this.$message.warning("删除需要选定一个元素")
@@ -491,7 +559,7 @@
         if (this.attachEle == selected) {
           this.attachEle = undefined
         }
-        templateAreaDiv.removeChild(selected)
+        template.removeChild(selected)
       },
       submitTemplate() {
         let templateAreaDiv = document.getElementById("templateArea");
@@ -714,7 +782,7 @@
   ul.menu {
     z-index: 100;
     cursor: default;
-    width: 150px;
+    width: 100px;
     background-color: white;
     border-left: 1px solid #d1d1d1;
     border-top: 1px solid #d1d1d1;
@@ -755,5 +823,14 @@
   div.prop-div {
     display: inline-block;
     margin-top: 10px;
+  }
+
+  .draggableEle {
+    width: 50px;
+    height: 50px;
+    background-color: white;
+    line-height: 50px;
+    text-align: center;
+    cursor: grab;
   }
 </style>
