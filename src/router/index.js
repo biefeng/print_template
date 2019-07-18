@@ -5,6 +5,8 @@ import listTemplate from '@/components/listTemplate'
 import testKeydown from '@/components/testKeydown'
 import draggable from '@/components/draggable'
 
+import sortable from '@/components/sortable'
+
 Vue.use(Router)
 
 export default new Router({
@@ -28,6 +30,11 @@ export default new Router({
       path: '/draggable',
       name: 'draggable',
       component: draggable
+    },
+    {
+      path: '/sortable',
+      name: 'sortable',
+      component: sortable
     }
   ]
 })
