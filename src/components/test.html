@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+
+  <script>
+    function dosomething() {
+      console.log("dosomething")
+    }
+
+    function dosomething2(e) {
+      console.log(e)
+      e.stopPropagation()
+      console.log("dosomething2")
+    }
+
+    function dosomething3(v1, v2, e) {
+      e.stopPropagation()
+      console.log("dosomething3")
+    }
+
+    window.onload = () => {
+      let d1 = document.getElementById("d1");
+      d1.addEventListener("click", dosomething, false)
+      let d2 = document.getElementById("d2");
+      d2.addEventListener("click", dosomething2, false)
+      let d3 = document.getElementById("d3");
+      d3.addEventListener("click", dosomething3.bind(this, "2", "3"), false)
+    }
+  </script>
+</head>
+<body>
+<div id="d1" style="width: 100px;height: 100px;background-color: antiquewhite">
+  <div id="d2" style="width: 50px;height: 50px;background-color: yellow;margin: auto">
+    <div id="d3" style="display: inline-block">
+      你好
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

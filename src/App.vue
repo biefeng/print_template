@@ -386,7 +386,7 @@
       },
       popTemplateMenu(e) {
         e.stopPropagation()
-        this.popMenu(e, "template")
+        this.popMenu("template", e)
       },
       closeMenu(e) {
         let editMenuUl = document.getElementById("editEleMenu");

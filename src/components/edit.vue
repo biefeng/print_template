@@ -6,7 +6,7 @@
       <li v-show="this.contentType==='area'" @mousedown="openDialog">编辑区域</li>
       <li @mousedown="deleteElement">删除元素</li>
     </ul>
-    <ul id="editTemMenu" class="menu" v-show="this.editTemMenuVisible">
+    <ul id="editTemMenu" class="menu" v-show="this.editTemMenu.visible">
       <li @mousedown="editTemplateDialogVisible =true">编辑模板</li>
       <li @mousedown="function(e) {
       e.stopPropagation()
@@ -19,9 +19,9 @@
     </ul>
 
     <ul id="contentTypeSelect" class="menu" v-show="this.contentTypeSelectVisible">
-      <li @mousedown="appendElement1('area')">页面</li>
-      <li @mousedown="appendElement1('text')">文本</li>
-      <li @mousedown="appendElement1('barCode')">条形码</li>
+      <li @mousedown="appendElement1('area',editTemMenu.menuType)" v-show="editTemMenu.menuType=='template'">页面</li>
+      <li @mousedown="appendElement1('text',editTemMenu.menuType)">文本</li>
+      <li @mousedown="appendElement1('barCode',editTemMenu.menuType)">条形码</li>
     </ul>
 
     <div id="template" ref="template"
@@ -197,7 +197,7 @@
         centerDialogVisible: false,
         editTemplateDialogVisible: false,
         editBarCodeDialogVisible: false,
-        editTemMenuVisible: false,
+        editTemMenu: {visible: false, menuType: "template"},
         contentTypeSelectVisible: false,
         horizenPosition: 0,
         verticalPosition: 0,
@@ -234,7 +234,7 @@
           label: 'FONT-4'
         }],
         fontType: 'FONT-1',
-        'selectedEle': {},
+        'selectedItem': {},
         "addedEle": [],
         "attachEle": undefined,
         valueName: '',
@@ -335,7 +335,7 @@
     },
     mounted() {
       let templateAreaDiv = document.getElementById("template");
-      templateAreaDiv.addEventListener("contextmenu", this.popTemplateMenu)
+      templateAreaDiv.addEventListener("contextmenu", this.popTemplateMenu, false)
       let contentTyleSelect = document.getElementById("contentTypeSelect");
       //设置false，禁止子元素进行捕获
       contentTyleSelect.addEventListener("mouseleave", this.closeContentTypeSelect, {capture: false})
@@ -370,11 +370,15 @@
           }
         }
       },
-      appendElement1(type) {
+      appendElement1(type,menuType) {
+        console.log(menuType)
         let template = document.getElementById("template");
-        let selectedEle = document.getElementsByClassName("selectedEle")[0];
-        if (selectedEle) {
-          selectedEle.classList.remove("selectedEle")
+        if (menuType=='area'){
+          template = document.getElementById("template");
+        }
+        let selectedItem = document.getElementsByClassName("selectedItem")[0];
+        if (selectedItem) {
+          selectedItem.classList.remove("selectedItem")
         }
         let element = document.createElement("div");
         element.style.height = DEFAULT_HEIGHT + "px"
@@ -382,8 +386,7 @@
         element.style.position = 'relative'
         element.style.backgroundColor = 'yellow'
         element.style.width = "100%"
-        element.classList.add("selectedEle")
-        element.addEventListener("contextmenu", this.popMenu)
+        element.classList.add("selectedItem")
 
 
         switch (type) {
@@ -395,7 +398,16 @@
             child.style.height = "50px"
             child.innerText = index++
             child.zIndex = 10
+            let child1 = document.createElement("div")
+            child1.classList.add("draggableFlag", "draggableEle")
+            child1.style.width = "50px"
+            child1.style.height = "50px"
+            child1.innerText = index++
+            child1.zIndex = 10
+            element.addEventListener("contextmenu", this.popMenu.bind(this, "area"), false)
+            element.addEventListener("click", this.selectedElement, true)
             element.appendChild(child)
+            element.appendChild(child1)
             break
           case  'text':
             element.setAttribute("type", "text")
@@ -405,8 +417,9 @@
             textSpan.style.margin = "auto"
             textSpan.classList.add("draggableFlag")
             textSpan.innerText = "Hello World"
+            element.addEventListener("contextmenu", this.popMenu.bind(this, "text"), false)
+            element.addEventListener("click", this.selectedElement, true)
             element.appendChild(textSpan)
-
           //element.style =element.style+"/*position: absolute;*/cursor:default;transform:scaleX(1.5);font-weight:bolder;text-align:center;vertical-align:center;font-size:13px;padding:0px 10px"
         }
 
@@ -420,7 +433,6 @@
         let draggableElements = Array.prototype.slice.call(document.getElementsByClassName("draggableFlag"));
         draggableElements.forEach(e => {
           let draggable = new PlainDraggable(e);
-          console.log(e.parentElement)
           draggable.onMove = function (p) {
             console.log('left: %d top %d', p.left - template.offsetLeft - e.parentElement.offsetLeft, p.top - template.offsetTop - e.parentElement.offsetTop)
           }
@@ -428,16 +440,17 @@
 
       },
       ondragstart(e) {
-        let selected = document.getElementsByClassName("selectedEle")[0];
+        return false
+        let selected = document.getElementsByClassName("selectedItem")[0];
         let clientRect = selected.getBoundingClientRect();
         let offsetX = selected.offsetX;
 
-        this.selectedEle.offsetX = selected.offsetLeft
-        this.selectedEle.offsetY = selected.offsetTop
+        this.selectedItem.offsetX = selected.offsetLeft
+        this.selectedItem.offsetY = selected.offsetTop
 
         //记录起始位置
-        this.selectedEle.offsetX_cursor = e.pageX;
-        this.selectedEle.offsetY_cursor = e.pageY;
+        this.selectedItem.offsetX_cursor = e.pageX;
+        this.selectedItem.offsetY_cursor = e.pageY;
       },
       ondrag(e) {
         console.log(e.movementX)
@@ -449,10 +462,10 @@
         }
         let dragDiv = e.currentTarget;
         let clientRect = dragDiv.getBoundingClientRect();
-        x = this.selectedEle.offsetX + x - this.selectedEle.offsetX_cursor
+        x = this.selectedItem.offsetX + x - this.selectedItem.offsetX_cursor
         if (x < 0 - (dragDiv.offsetWidth - clientRect.width) / 2)
           x = 0 - (dragDiv.offsetWidth - clientRect.width) / 2
-        y = this.selectedEle.offsetY + y - this.selectedEle.offsetY_cursor
+        y = this.selectedItem.offsetY + y - this.selectedItem.offsetY_cursor
         if (y <= 0 - (dragDiv.offsetHeight - clientRect.height) / 2)
           y = 0 - (dragDiv.offsetHeight - clientRect.height) / 2
 
@@ -471,21 +484,22 @@
 
       },
       selectedElement(e) {
-        let htmlCollection = document.getElementsByClassName("selectedEle");
+        let htmlCollection = document.getElementsByClassName("selectedItem");
         let preSelected = htmlCollection[0]
         let selected = e.currentTarget
         if (htmlCollection && htmlCollection.length > 0 && selected != preSelected) {
           let classList = preSelected.classList;
           preSelected.removeEventListener("dragstart", this.ondragstart, true)
           preSelected.removeEventListener("drag", this.ondrag, true)
-          classList.remove("selectedEle")
+          classList.remove("selectedItem")
+          // preSelected.style.zIndex = "-1"
         }
         selected.onkeydown = this.moveByDirectKey
-        selected.addEventListener("drag", this.ondrag, true)
-        selected.addEventListener("dragstart", this.ondragstart, true)
-        let tmp = selected.style
+        //selected.addEventListener("drag", this.ondrag, true)
+        //selected.addEventListener("dragstart", this.ondragstart, true)
+
         this.contentType = selected.getAttribute("type")
-        selected.classList.add("selectedEle")
+        selected.classList.add("selectedItem")
       },
       appendElement(contentType) {
         if (!contentType || contentType === '') {
@@ -493,7 +507,7 @@
           return
         }
         let templateAreaDiv = document.getElementById("templateArea")
-        let selectedEle = document.getElementsByClassName("selectedEle")[0];
+        let selectedItem = document.getElementsByClassName("selectedItem")[0];
 
         let childElement
         switch (contentType) {
@@ -527,8 +541,8 @@
             })
             break;
         }
-        if (selectedEle) {
-          selectedEle.classList.remove("selectedEle")
+        if (selectedItem) {
+          selectedItem.classList.remove("selectedItem")
         }
         childElement.horizenPosition = DEFAULT_HORIZEN_POS
         childElement.verticalPosition = DEFAULT_VERTICAL_POS
@@ -538,10 +552,10 @@
         childElement.addEventListener("click", this.selectedElement, true)
         childElement.addEventListener("contextmenu", this.popMenu)
         childElement.classList.add("templateElement");
-        childElement.classList.add("selectedEle");
+        childElement.classList.add("selectedItem");
         //
         setTimeout(function () {
-          let selected = document.getElementsByClassName("selectedEle")[0];
+          let selected = document.getElementsByClassName("selectedItem")[0];
           let clientRect = selected.getBoundingClientRect();
           selected.style.left = selected.horizenPosition - (selected.offsetWidth - clientRect.width) / 2 + "px"
           selected.style.top = selected.verticalPosition - (selected.offsetHeight - clientRect.height) / 2 + "px"
@@ -550,7 +564,7 @@
       },
       deleteElement() {
         let template = document.getElementById("template")
-        let htmlCollection = document.getElementsByClassName("selectedEle");
+        let htmlCollection = document.getElementsByClassName("selectedItem");
         if (htmlCollection.length == 0) {
           this.$message.warning("删除需要选定一个元素")
           return
@@ -608,20 +622,24 @@
           console.log("请求成功")
         )
       },
-      popMenu(e, flag) {
+      popMenu(flag, e) {
         var event = e || window.event
         if (event.button == 2) {
           event.preventDefault();
-          e.stopPropagation()
+          event.stopPropagation()
           var _x = event.clientX,
             _y = event.clientY;
           let editMenuUl
           if (flag === 'template') {
-            this.editTemMenuVisible = true
+            this.editTemMenu.visible = true
             editMenuUl = document.getElementById("editTemMenu");
+          } else if (flag == 'area') {
+            this.editTemMenu.visible = true
+            editMenuUl = document.getElementById("editTemMenu");
+            this.editTemMenu.menuType = 'area'
           } else {
             editMenuUl = document.getElementById("editEleMenu");
-            this.attachEle = e.currentTarget
+            this.attachEle = event.currentTarget
             this.selectedElement(event)
           }
           editMenuUl.style.position = "absolute"
@@ -632,17 +650,18 @@
       },
       popTemplateMenu(e) {
         e.stopPropagation()
-        this.popMenu(e, "template")
+        this.editTemMenu.menuType = 'template'
+        this.popMenu("template", e)
       },
       closeMenu(e) {
         let editMenuUl = document.getElementById("editEleMenu");
-        this.editTemMenuVisible = false
+        this.editTemMenu.visible = false
         this.attachEle = undefined
         document.removeEventListener("mousedown", this.closeMenu, false)
       },
       openDialog() {
         this.centerDialogVisible = true
-        let selected = document.getElementsByClassName("selectedEle")[0];
+        let selected = document.getElementsByClassName("selectedItem")[0];
         this.loadData(this, selected)
       },
       loadData(selected, element) {
@@ -671,7 +690,7 @@
       closeDialog(flag) {
         this.centerDialogVisible = false
         if (flag && flag === 'apply') {
-          let selected = document.getElementsByClassName("selectedEle")[0];
+          let selected = document.getElementsByClassName("selectedItem")[0];
           let clientRect = selected.getBoundingClientRect();
           selected.style.left = this.horizenPosition - (selected.offsetWidth - clientRect.width) / 2 + "px"
           selected.style.top = this.verticalPosition - (selected.offsetHeight - clientRect.height) / 2 + "px"
@@ -746,21 +765,21 @@
         templateAreaDiv.innerHTML = "";
       },
       moveByDirectKey(e) {
-        let selectedEle = document.getElementsByClassName("selectedEle")[0];
+        let selectedItem = document.getElementsByClassName("selectedItem")[0];
         let templateAreaDiv = document.getElementById("templateArea");
         var e = window.event || e;
         switch (e.keyCode) {
           case 37: //左
-            selectedEle.style.left = Math.max(0, selectedEle.offsetLeft - 1) + "px";
+            selectedItem.style.left = Math.max(0, selectedItem.offsetLeft - 1) + "px";
             break;
           case 38: //上
-            selectedEle.style.top = Math.max(0, selectedEle.offsetTop - 1) + "px";
+            selectedItem.style.top = Math.max(0, selectedItem.offsetTop - 1) + "px";
             break;
           case 39:  //右
-            selectedEle.style.left = Math.min(templateAreaDiv.offsetWidth - 4 - selectedEle.offsetWidth, selectedEle.offsetLeft + 1) + "px";
+            selectedItem.style.left = Math.min(templateAreaDiv.offsetWidth - 4 - selectedItem.offsetWidth, selectedItem.offsetLeft + 1) + "px";
             break;
           case 40:  //下
-            selectedEle.style.top = Math.min(templateAreaDiv.offsetHeight - 4 - selectedEle.offsetHeight, selectedEle.offsetTop + 1) + "px";
+            selectedItem.style.top = Math.min(templateAreaDiv.offsetHeight - 4 - selectedItem.offsetHeight, selectedItem.offsetTop + 1) + "px";
             break;
         }
       }
@@ -808,12 +827,12 @@
     line-height: 28px;
   }
 
-  .selectedEle {
+  .selectedItem {
     z-index: 99;
     background-color: #f1f1f1;
-    -moz-box-shadow: 2px 2px 5px #333333;
-    -webkit-box-shadow: 2px 2px 5px #333333;
-    box-shadow: 2px 2px 5px #333333;
+    -moz-box-shadow: 1px 1px 5px #333333;
+    -webkit-box-shadow: 1px 1px 5px #333333;
+    box-shadow: 1px 1px 5px #333333;
   }
 
   .templateElement {
