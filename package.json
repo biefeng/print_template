@@ -3,10 +3,12 @@
   "version": "1.0.0",
   "description": "A Vue.js project",
   "author": "BieFeNg <feng.bie@myt11.com>",
+  "main": "dist/main.js",
   "private": true,
   "scripts": {
     "dev": "webpack-dev-server --inline --progress --config build/webpack.dev.conf.js",
     "start": "npm run dev",
+    "server": "electron .",
     "unit": "jest --config test/unit/jest.conf.js --coverage",
     "e2e": "node test/e2e/runner.js",
     "test": "npm run unit && npm run e2e",

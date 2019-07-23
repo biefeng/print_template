@@ -38,7 +38,7 @@ export default new Router({
       component: sortable
     },
     {
-      path: '/edit',
+      path: '/',
       name: 'edit',
       component: edit
     }

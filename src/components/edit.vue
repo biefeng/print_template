@@ -19,13 +19,14 @@
     </ul>
 
     <ul id="contentTypeSelect" class="menu" v-show="this.contentTypeSelectVisible">
-      <li @mousedown="appendElement1('area',editTemMenu.menuType)" v-show="editTemMenu.menuType=='template'">页面</li>
-      <li @mousedown="appendElement1('text',editTemMenu.menuType)">文本</li>
-      <li @mousedown="appendElement1('barCode',editTemMenu.menuType)">条形码</li>
+      <li @mousedown="appendElement1($event,'area',editTemMenu.menuType)" v-show="editTemMenu.menuType=='template'">页面
+      </li>
+      <li @mousedown="appendElement1($event,'text',editTemMenu.menuType)">文本</li>
+      <li @mousedown="appendElement1($event,'barCode',editTemMenu.menuType)">条形码</li>
     </ul>
 
     <div id="template" ref="template"
-         style="position: relative;margin: 10px auto;width: 450px;min-height: 220px;border: 3px solid #a3a3a3;background-color: rgba(218,250,238,0.14);padding-bottom: 100px">
+         style="position: relative;margin: 10px auto;width: 450px;min-height: 220px;border: 3px solid #a3a3a3;background-color: rgba(218,250,238,0.14);padding:50px 5px 50px 5px">
 
     </div>
 
@@ -339,14 +340,15 @@
       let contentTyleSelect = document.getElementById("contentTypeSelect");
       //设置false，禁止子元素进行捕获
       contentTyleSelect.addEventListener("mouseleave", this.closeContentTypeSelect, {capture: false})
-
+      /*let childrenNodes = contentTyleSelect.getChildrenNodes();
+      for (let i=0;i<childrenNodes.length;i++){
+        childrenNodes[i].addEventListener("mousedown",this.appendElement1.bind())
+      } */
 
       //接收参数
       this.printMode = this.$route.params.printMode ? this.$route.params.printMode : this.printMode
       this.printerType = this.$route.params.printerType ? this.$route.params.printerType : this.printerType
       this.loadTemplates(this.$route.params.row)
-    },
-    updated() {
     },
     created() {
       document.addEventListener('keydown', this.moveByDirectKey)
@@ -365,76 +367,115 @@
           let collection = document.getElementsByClassName("templateElement");
           for (let i = 0; i < collection.length; i++) {
             this.loadData(collection[i], template.elements[i])
-            collection[i].addEventListener("mousedown", this.selectedElement, true)
+            collection[i].addEventListener("mousedown", this.selectedItemFun, true)
             collection[i].addEventListener("contextmenu", this.popMenu)
           }
         }
       },
-      appendElement1(type,menuType) {
-        console.log(menuType)
-        let template = document.getElementById("template");
-        if (menuType=='area'){
+      appendElement1(e, type, menuType) {
+        let template = this.editTemMenu.target
+        /*let template = document.getElementById("template");
+        if (menuType == 'template') {
           template = document.getElementById("template");
+        }else if(menuType == 'area'){
+          template = document.getElementsByClassName("selectedItem");
+        }*/
+        let element;
+        if (menuType == 'template') {
+          let selectedItem = document.getElementsByClassName("selectedItem")[0];
+          if (selectedItem) {
+            selectedItem.classList.remove("selectedItem")
+          }
+          element = document.createElement("div");
+          element.style.height = DEFAULT_HEIGHT + "px"
+          element.style.lineHeight = DEFAULT_HEIGHT + "px"
+          element.style.position = 'relative'
+          element.style.backgroundColor = 'yellow'
+          element.style.width = "100%"
+          element.classList.add("selectedItem")
+
+
+          switch (type) {
+            case 'area':
+              element.setAttribute("type", "area")
+              element.addEventListener("contextmenu", this.popMenu.bind(this, "area"), false)
+              element.addEventListener("click", this.selectedItemFun, true)
+              break
+            case  'text':
+              element.setAttribute("type", "text")
+              let textSpan = document.createElement("span");
+              textSpan.style.display = "inline-block"
+              textSpan.style.margin = "auto"
+              textSpan.classList.add("draggableFlag")
+              textSpan.innerText = "Hello World"
+              element.addEventListener("contextmenu", this.popMenu.bind(this, "text"), false)
+              element.addEventListener("click", this.selectedItemFun, true)
+              element.appendChild(textSpan)
+              break
+            case "barCode":
+              element.setAttribute("type", "barCode")
+              let childElement = document.createElement("img");
+              childElement.classList.add("barCodeEle", "draggableFlag")
+              // childElement.style.transform = "scale(0.6,0.6);"
+              childElement.style.height = "100%"
+              childElement.style.width = "150px"
+              childElement.barCodeType = BARCODE_TYPE
+              childElement.barCodeValuePosition = BARCODE_POS
+              childElement.displayBarCodeValue = BARCODE_DISPLAY_VALUE
+              childElement.barCodeWidth = BARCODE_WIDTH
+              childElement.barCodeHeight = BARCODE_HEIGHT
+              childElement.exampleData = 'Hello!'
+              element.addEventListener("click", this.selectedItemFun, true)
+              element.appendChild(childElement)
+              JsBarCode(childElement, childElement.exampleData, {
+                format: this.barCodeType,
+                lineColor: "black",
+                width: 2,
+                height: this.barCodeHeight,
+                displayValue: true
+              })
+              break;
+            //element.style =element.style+"/*position: absolute;*/cursor:default;transform:scaleX(1.5);font-weight:bolder;text-align:center;vertical-align:center;font-size:13px;padding:0px 10px"
+          }
+          template.appendChild(element)
+        } else if (menuType === 'area') {
+
+          switch (type) {
+            case 'text':
+              let child = document.createElement("span")
+              child.classList.add("draggableFlag", "draggableEle")
+              child.style.display = "inline-block"
+              child.style.height = "30px"
+              child.style.lineHeight = "30px"
+              child.innerText = "你好"
+              child.zIndex = 100
+              this.contentType = "text"
+              child.addEventListener("contextmenu", this.popMenu.bind(this, "text"), false)
+              child.addEventListener("click", this.selectedElementFun, true)
+              template.appendChild(child)
+              break
+          }
         }
-        let selectedItem = document.getElementsByClassName("selectedItem")[0];
-        if (selectedItem) {
-          selectedItem.classList.remove("selectedItem")
-        }
-        let element = document.createElement("div");
-        element.style.height = DEFAULT_HEIGHT + "px"
-        element.style.lineHeight = DEFAULT_HEIGHT + "px"
-        element.style.position = 'relative'
-        element.style.backgroundColor = 'yellow'
-        element.style.width = "100%"
-        element.classList.add("selectedItem")
-
-
-        switch (type) {
-          case 'area':
-            element.setAttribute("type", "area")
-            let child = document.createElement("div")
-            child.classList.add("draggableFlag", "draggableEle")
-            child.style.width = "50px"
-            child.style.height = "50px"
-            child.innerText = index++
-            child.zIndex = 10
-            let child1 = document.createElement("div")
-            child1.classList.add("draggableFlag", "draggableEle")
-            child1.style.width = "50px"
-            child1.style.height = "50px"
-            child1.innerText = index++
-            child1.zIndex = 10
-            element.addEventListener("contextmenu", this.popMenu.bind(this, "area"), false)
-            element.addEventListener("click", this.selectedElement, true)
-            element.appendChild(child)
-            element.appendChild(child1)
-            break
-          case  'text':
-            element.setAttribute("type", "text")
-            let htmlElement = document.createElement("span");
-            let textSpan = htmlElement;
-            textSpan.style.display = "inline-block"
-            textSpan.style.margin = "auto"
-            textSpan.classList.add("draggableFlag")
-            textSpan.innerText = "Hello World"
-            element.addEventListener("contextmenu", this.popMenu.bind(this, "text"), false)
-            element.addEventListener("click", this.selectedElement, true)
-            element.appendChild(textSpan)
-          //element.style =element.style+"/*position: absolute;*/cursor:default;transform:scaleX(1.5);font-weight:bolder;text-align:center;vertical-align:center;font-size:13px;padding:0px 10px"
-        }
-
-
-        template.appendChild(element)
 
 
         new Sortable(template, {
-          animation: 200
+          animation: 200,
+          chosenClass: "sortable-chosen",  // Class name for the chosen item
+          dragClass: "sortable-drag"
         })
         let draggableElements = Array.prototype.slice.call(document.getElementsByClassName("draggableFlag"));
         draggableElements.forEach(e => {
           let draggable = new PlainDraggable(e);
           draggable.onMove = function (p) {
-            console.log('left: %d top %d', p.left - template.offsetLeft - e.parentElement.offsetLeft, p.top - template.offsetTop - e.parentElement.offsetTop)
+            //console.log('left: %d top %d', p.left - template.offsetLeft - e.parentElement.offsetLeft, p.top - template.offsetTop - e.parentElement.offsetTop)
+          }
+          draggable.onDragStart = function (e) {
+            let selectedEle = e.currentTarget
+            let preSelectedEle = document.getElementsByClassName("selectedEle")[0]
+            if (preSelectedEle && selectedEle != preSelectedEle) {
+              preSelectedEle.classList.remove("selectedEle")
+            }
+            selectedEle.classList.add("selectedEle")
           }
         })
 
@@ -483,23 +524,39 @@
       ondragend() {
 
       },
-      selectedElement(e) {
+      selectedItemFun(e) {
+        let selected;
+        if (e) {
+          e.stopPropagation()
+          selected = e.currentTarget;
+        }
+        if (e instanceof CustomEvent) {
+          selected = document.getElementsByClassName("sortable-chosen")[0];
+        }
         let htmlCollection = document.getElementsByClassName("selectedItem");
         let preSelected = htmlCollection[0]
-        let selected = e.currentTarget
         if (htmlCollection && htmlCollection.length > 0 && selected != preSelected) {
           let classList = preSelected.classList;
           preSelected.removeEventListener("dragstart", this.ondragstart, true)
           preSelected.removeEventListener("drag", this.ondrag, true)
           classList.remove("selectedItem")
-          // preSelected.style.zIndex = "-1"
         }
         selected.onkeydown = this.moveByDirectKey
         //selected.addEventListener("drag", this.ondrag, true)
         //selected.addEventListener("dragstart", this.ondragstart, true)
-
-        this.contentType = selected.getAttribute("type")
+        document.addEventListener("click",this.cancelSelectedElement,{capture:false,once:true})
+        // this.contentType = selected.getAttribute("type")
         selected.classList.add("selectedItem")
+      },
+      cancelSelectedElement(e){
+          let selectedItem = document.getElementsByClassName("selectedItem")[0];
+          if (selectedItem){
+            selectedItem.classList.remove("selectedItem")
+          }
+          let selectedEle = document.getElementsByClassName("selectedEle")[0];
+          if (selectedEle) {
+            selectedEle.classList.remove("selectedEle")
+          }
       },
       appendElement(contentType) {
         if (!contentType || contentType === '') {
@@ -549,7 +606,7 @@
         childElement.style.top = DEFAULT_VERTICAL_POS + "px"
         childElement.style.left = DEFAULT_HORIZEN_POS + "px"
         //childElement.draggable=false
-        childElement.addEventListener("click", this.selectedElement, true)
+        childElement.addEventListener("click", this.selectedItemFun, true)
         childElement.addEventListener("contextmenu", this.popMenu)
         childElement.classList.add("templateElement");
         childElement.classList.add("selectedItem");
@@ -563,7 +620,7 @@
         templateAreaDiv.appendChild(childElement)
       },
       deleteElement() {
-        let template = document.getElementById("template")
+        let template = this.editTemMenu.target
         let htmlCollection = document.getElementsByClassName("selectedItem");
         if (htmlCollection.length == 0) {
           this.$message.warning("删除需要选定一个元素")
@@ -625,22 +682,24 @@
       popMenu(flag, e) {
         var event = e || window.event
         if (event.button == 2) {
-          event.preventDefault();
           event.stopPropagation()
+          event.preventDefault();
           var _x = event.clientX,
             _y = event.clientY;
           let editMenuUl
           if (flag === 'template') {
             this.editTemMenu.visible = true
+            this.editTemMenu.target = e.currentTarget
             editMenuUl = document.getElementById("editTemMenu");
           } else if (flag == 'area') {
             this.editTemMenu.visible = true
+            this.editTemMenu.target = e.currentTarget
             editMenuUl = document.getElementById("editTemMenu");
             this.editTemMenu.menuType = 'area'
           } else {
             editMenuUl = document.getElementById("editEleMenu");
             this.attachEle = event.currentTarget
-            this.selectedElement(event)
+            this.selectedItemFun(event)
           }
           editMenuUl.style.position = "absolute"
           editMenuUl.style.left = _x + "px";
@@ -835,6 +894,14 @@
     box-shadow: 1px 1px 5px #333333;
   }
 
+  .selectedEle {
+    z-index: 99;
+    background-color: #f1f1f1;
+    -moz-box-shadow: 1px 1px 5px #333333;
+    -webkit-box-shadow: 1px 1px 5px #333333;
+    box-shadow: 1px 1px 5px #333333;
+  }
+
   .templateElement {
     z-index: 99;
   }
@@ -845,10 +912,6 @@
   }
 
   .draggableEle {
-    width: 50px;
-    height: 50px;
-    background-color: white;
-    line-height: 50px;
     text-align: center;
     cursor: grab;
   }
