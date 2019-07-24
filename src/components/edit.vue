@@ -1,13 +1,14 @@
 <template>
   <div id="edit">
     <ul id="editEleMenu" class="menu" v-show="this.attachEle">
-      <li v-show="this.contentType==='text'" @mousedown="openDialog">编辑文本</li>
-      <li v-show="this.contentType==='barCode'" @mousedown="openDialog">编辑条形码</li>
-      <li v-show="this.contentType==='area'" @mousedown="openDialog">编辑区域</li>
+      <li v-show="this.contentType==='text'" @mousedown="openEditTemplateDialog($event)">编辑文本</li>
+      <li v-show="this.contentType==='barCode'" @mousedown="openEditTemplateDialog($event)">编辑条形码</li>
+      <!--<li v-show="this.contentType==='area'" @mousedown="openEditTemplateDialog">编辑区域</li>-->
       <li @mousedown="deleteElement">删除元素</li>
     </ul>
-    <ul id="editTemMenu" class="menu" v-show="this.editTemMenu.visible">
-      <li @mousedown="editTemplateDialogVisible =true">编辑模板</li>
+    <ul id="editTemMenu" class="menu" v-show="this.editTemMenu.visible" @mouseleave="closeEditTemMenu">
+      <li @mousedown="editAreaDialogVisible =true" v-show="this.editTemMenu.menuType==='template'">编辑模板</li>
+      <li @mousedown="editAreaDialogVisible =true" v-show="this.editTemMenu.menuType==='area'">编辑区域</li>
       <li @mousedown="function(e) {
       e.stopPropagation()
       }" @mouseenter="openContentTypeSelect" @mouseleave="closeContentTypeSelect">添加元素
@@ -18,7 +19,8 @@
       <li @mousedown="clearTemplateArea">清除元素</li>
     </ul>
 
-    <ul id="contentTypeSelect" class="menu" v-show="this.contentTypeSelectVisible">
+    <ul id="contentTypeSelect" class="menu" v-show="this.contentTypeSelectVisible"
+        @mouseenter="editTemMenu.visible=true">
       <li @mousedown="appendElement1($event,'area',editTemMenu.menuType)" v-show="editTemMenu.menuType=='template'">页面
       </li>
       <li @mousedown="appendElement1($event,'text',editTemMenu.menuType)">文本</li>
@@ -35,7 +37,7 @@
 
     <el-dialog
       title="提示"
-      :visible.sync="editTemplateDialogVisible"
+      :visible.sync="editAreaDialogVisible"
       width="30%"
       center>
       <div class="prop-div">
@@ -48,20 +50,19 @@
         <el-input style="width: 120px" v-model="printAreaHeight" placeholder="打印区域高度"></el-input>
       </div>
       <span slot="footer" class="dialog-footer">
-        <el-button @click="editTemplateDialogVisible = false">取 消</el-button>
-        <el-button type="primary" @click="closeEditTemplateDialog">确 定</el-button>
+        <el-button @click="editAreaDialogVisible = false">取 消</el-button>
+        <el-button type="primary" @click="closeEditAreaDialog">确 定</el-button>
       </span>
     </el-dialog>
     <br/>
-    <el-button style="position: relative;margin: 5px 0px 10px 685px;display:inline-block;" type="primary"
-               @click="submitTemplate">保存模板
+    <el-button style="position: relative;margin: 5px 0px 10px 685px;display:inline-block;" type="primary">保存模板
     </el-button>
     <el-button style="position: relative;display:inline-block;" type="primary" @click="e=>{this.$router.back()}">返回
     </el-button>
     <!--<div id="templateArea"
          style="position: relative;margin: 10px auto;width: 450px;height: 220px;border: 3px solid #a3a3a3;background-color: rgba(218,250,238,0.14)">
     </div>-->
-    <el-dialog title="编辑格式" :visible.sync="centerDialogVisible" width="30%" center>
+    <el-dialog title="编辑格式" :visible.sync="editElementDialogVisible" width="30%" center>
       <span style="/*display: block;*/margin-top: 10px;">
         <div class="prop-div">
           <span class="label">水平定位</span>
@@ -166,8 +167,8 @@
         </div>
       </span>
       <span slot="footer" class="dialog-footer">
-        <el-button @click="closeDialog('cancel')">取 消</el-button>
-        <el-button type="primary" @click="closeDialog('apply')">确 定</el-button>
+        <el-button @click="closeEditTemplateDialog($event,'cancel')">取 消</el-button>
+        <el-button type="primary" @click="closeEditTemplateDialog($event,'apply')">确 定</el-button>
       </span>
     </el-dialog>
   </div>
@@ -195,8 +196,8 @@
     name: 'edit',
     data() {
       return {
-        centerDialogVisible: false,
-        editTemplateDialogVisible: false,
+        editElementDialogVisible: false,
+        editAreaDialogVisible: false,
         editBarCodeDialogVisible: false,
         editTemMenu: {visible: false, menuType: "template"},
         contentTypeSelectVisible: false,
@@ -333,45 +334,36 @@
       }
     },
     updated() {
+      new Sortable(template, {
+        animation: 200,
+        chosenClass: "sortable-chosen",  // Class name for the chosen item
+        dragClass: "sortable-drag"
+      })
+      let draggableElements = Array.prototype.slice.call(document.getElementsByClassName("draggableFlag"));
+      let selectedElementFun = this.selectedElementFun
+      draggableElements.forEach(e => {
+        let draggable = new PlainDraggable(e);
+        draggable.onMove = function (p) {
+          //console.log('left: %d top %d', p.left - template.offsetLeft - e.parentElement.offsetLeft, p.top - template.offsetTop - e.parentElement.offsetTop)
+        }
+        draggable.onDragStart = selectedElementFun
+      })
     },
     mounted() {
       let templateAreaDiv = document.getElementById("template");
       templateAreaDiv.addEventListener("contextmenu", this.popTemplateMenu, false)
       let contentTyleSelect = document.getElementById("contentTypeSelect");
-      //设置false，禁止子元素进行捕获
+      //设置false，禁止对子元素事件进行捕获
       contentTyleSelect.addEventListener("mouseleave", this.closeContentTypeSelect, {capture: false})
-      /*let childrenNodes = contentTyleSelect.getChildrenNodes();
-      for (let i=0;i<childrenNodes.length;i++){
-        childrenNodes[i].addEventListener("mousedown",this.appendElement1.bind())
-      } */
-
       //接收参数
       this.printMode = this.$route.params.printMode ? this.$route.params.printMode : this.printMode
       this.printerType = this.$route.params.printerType ? this.$route.params.printerType : this.printerType
-      this.loadTemplates(this.$route.params.row)
+      // this.loadTemplates(this.$route.params.row)
     },
     created() {
-      document.addEventListener('keydown', this.moveByDirectKey)
+      // document.addEventListener('keydown', this.moveByDirectKey)
     },
     methods: {
-      /*加载模板，即预览功能*/
-      loadTemplates(template) {
-        if (template) {
-          let templates = this.templates
-          let templateAreaDiv = document.getElementById("templateArea")
-
-          let html = template.html;
-          templateAreaDiv.style.width = template.printWidth + "px"
-          templateAreaDiv.style.height = template.printHeight + "px"
-          templateAreaDiv.innerHTML = html
-          let collection = document.getElementsByClassName("templateElement");
-          for (let i = 0; i < collection.length; i++) {
-            this.loadData(collection[i], template.elements[i])
-            collection[i].addEventListener("mousedown", this.selectedItemFun, true)
-            collection[i].addEventListener("contextmenu", this.popMenu)
-          }
-        }
-      },
       appendElement1(e, type, menuType) {
         let template = this.editTemMenu.target
         /*let template = document.getElementById("template");
@@ -387,33 +379,37 @@
             selectedItem.classList.remove("selectedItem")
           }
           element = document.createElement("div");
-          element.style.height = DEFAULT_HEIGHT + "px"
-          element.style.lineHeight = DEFAULT_HEIGHT + "px"
           element.style.position = 'relative'
           element.style.backgroundColor = 'yellow'
           element.style.width = "100%"
           element.classList.add("selectedItem")
-
-
           switch (type) {
             case 'area':
               element.setAttribute("type", "area")
+              element.style.height = 500 + "px"
+              element.style.lineHeight = 500 + "px"
               element.addEventListener("contextmenu", this.popMenu.bind(this, "area"), false)
               element.addEventListener("click", this.selectedItemFun, true)
               break
             case  'text':
               element.setAttribute("type", "text")
+              element.style.height = "50px"
+              element.style.lineHeight = "50px"
               let textSpan = document.createElement("span");
               textSpan.style.display = "inline-block"
+              textSpan.setAttribute("type", "text")
               textSpan.style.margin = "auto"
               textSpan.classList.add("draggableFlag")
-              textSpan.innerText = "Hello World"
+              textSpan.textContent = "Hello World"
+              textSpan.zIndex = 20
               element.addEventListener("contextmenu", this.popMenu.bind(this, "text"), false)
               element.addEventListener("click", this.selectedItemFun, true)
               element.appendChild(textSpan)
               break
             case "barCode":
               element.setAttribute("type", "barCode")
+              element.style.height = BARCODE_HEIGHT + "px"
+              element.style.lineHeight = BARCODE_HEIGHT + "px"
               let childElement = document.createElement("img");
               childElement.classList.add("barCodeEle", "draggableFlag")
               // childElement.style.transform = "scale(0.6,0.6);"
@@ -437,92 +433,49 @@
               break;
             //element.style =element.style+"/*position: absolute;*/cursor:default;transform:scaleX(1.5);font-weight:bolder;text-align:center;vertical-align:center;font-size:13px;padding:0px 10px"
           }
+          element.classList.add("selectedItem")
           template.appendChild(element)
         } else if (menuType === 'area') {
 
           switch (type) {
             case 'text':
-              let child = document.createElement("span")
+              let child = document.createElement("div")
               child.classList.add("draggableFlag", "draggableEle")
-              child.style.display = "inline-block"
+              child.style.display = "block"
+              child.style.position = 'absolute'
               child.style.height = "30px"
+              child.setAttribute("type", "text")
               child.style.lineHeight = "30px"
-              child.innerText = "你好"
+              child.textContent = "你好"
               child.zIndex = 100
               this.contentType = "text"
               child.addEventListener("contextmenu", this.popMenu.bind(this, "text"), false)
               child.addEventListener("click", this.selectedElementFun, true)
               template.appendChild(child)
               break
+            case 'barCode':
+              let barCode = document.createElement("img")
+              barCode.setAttribute("type", "barCode")
+              barCode.classList.add("draggableFlag", "draggableEle")
+              barCode.style.display = "inline-block"
+              barCode.style.position = 'absolute'
+              barCode.style.height = BARCODE_HEIGHT + "px"
+              barCode.zIndex = 100
+              barCode.exampleData = "Hello!"
+              this.contentType = "barCode"
+              barCode.addEventListener("contextmenu", this.popMenu.bind(this, "barCode"), false)
+              barCode.addEventListener("click", this.selectedElementFun, true)
+              template.appendChild(barCode)
+              JsBarCode(barCode, barCode.exampleData, {
+                format: this.barCodeType,
+                lineColor: "black",
+                width: 2,
+                height: this.barCodeHeight,
+                displayValue: true
+              })
+              break
           }
         }
-
-
-        new Sortable(template, {
-          animation: 200,
-          chosenClass: "sortable-chosen",  // Class name for the chosen item
-          dragClass: "sortable-drag"
-        })
-        let draggableElements = Array.prototype.slice.call(document.getElementsByClassName("draggableFlag"));
-        draggableElements.forEach(e => {
-          let draggable = new PlainDraggable(e);
-          draggable.onMove = function (p) {
-            //console.log('left: %d top %d', p.left - template.offsetLeft - e.parentElement.offsetLeft, p.top - template.offsetTop - e.parentElement.offsetTop)
-          }
-          draggable.onDragStart = function (e) {
-            let selectedEle = e.currentTarget
-            let preSelectedEle = document.getElementsByClassName("selectedEle")[0]
-            if (preSelectedEle && selectedEle != preSelectedEle) {
-              preSelectedEle.classList.remove("selectedEle")
-            }
-            selectedEle.classList.add("selectedEle")
-          }
-        })
-
-      },
-      ondragstart(e) {
-        return false
-        let selected = document.getElementsByClassName("selectedItem")[0];
-        let clientRect = selected.getBoundingClientRect();
-        let offsetX = selected.offsetX;
-
-        this.selectedItem.offsetX = selected.offsetLeft
-        this.selectedItem.offsetY = selected.offsetTop
-
-        //记录起始位置
-        this.selectedItem.offsetX_cursor = e.pageX;
-        this.selectedItem.offsetY_cursor = e.pageY;
-      },
-      ondrag(e) {
-        console.log(e.movementX)
-        let templateAreaDiv = document.getElementById("templateArea");
-        var x = e.pageX;
-        var y = e.pageY;
-        if (x == 0 && y == 0) {
-          return;
-        }
-        let dragDiv = e.currentTarget;
-        let clientRect = dragDiv.getBoundingClientRect();
-        x = this.selectedItem.offsetX + x - this.selectedItem.offsetX_cursor
-        if (x < 0 - (dragDiv.offsetWidth - clientRect.width) / 2)
-          x = 0 - (dragDiv.offsetWidth - clientRect.width) / 2
-        y = this.selectedItem.offsetY + y - this.selectedItem.offsetY_cursor
-        if (y <= 0 - (dragDiv.offsetHeight - clientRect.height) / 2)
-          y = 0 - (dragDiv.offsetHeight - clientRect.height) / 2
-
-        if (y > templateAreaDiv.offsetHeight - clientRect.height - (dragDiv.offsetHeight - clientRect.height) / 2) {
-          y = templateAreaDiv.offsetHeight - 4 - clientRect.height - (dragDiv.offsetHeight - clientRect.height) / 2
-        }
-        if (x > templateAreaDiv.offsetWidth - clientRect.width - (dragDiv.offsetWidth - clientRect.width) / 2) {
-          x = templateAreaDiv.offsetWidth - 4 - clientRect.width - (dragDiv.offsetWidth - clientRect.width) / 2
-        }
-        dragDiv.style.left = x + 'px';
-        if (this.printMode === 0) {
-          dragDiv.style.top = y + 'px';
-        }
-      },
-      ondragend() {
-
       },
       selectedItemFun(e) {
         let selected;
@@ -541,143 +494,58 @@
           preSelected.removeEventListener("drag", this.ondrag, true)
           classList.remove("selectedItem")
         }
-        selected.onkeydown = this.moveByDirectKey
+        // selected.onkeydown = this.moveByDirectKey
         //selected.addEventListener("drag", this.ondrag, true)
         //selected.addEventListener("dragstart", this.ondragstart, true)
-        document.addEventListener("click",this.cancelSelectedElement,{capture:false,once:true})
+        document.addEventListener("click", this.cancelSelectedElement, {capture: false, once: true})
         // this.contentType = selected.getAttribute("type")
         selected.classList.add("selectedItem")
+        this.contentType = selected.getAttribute("type")
       },
-      cancelSelectedElement(e){
-          let selectedItem = document.getElementsByClassName("selectedItem")[0];
-          if (selectedItem){
-            selectedItem.classList.remove("selectedItem")
-          }
-          let selectedEle = document.getElementsByClassName("selectedEle")[0];
-          if (selectedEle) {
-            selectedEle.classList.remove("selectedEle")
-          }
-      },
-      appendElement(contentType) {
-        if (!contentType || contentType === '') {
-          this.$message.warning("请选择一种类型")
-          return
+      selectedElementFun(e) {
+        let selectedEle = e.currentTarget
+        let preSelectedEle = document.getElementsByClassName("selectedEle")[0]
+        if (preSelectedEle && selectedEle != preSelectedEle) {
+          preSelectedEle.classList.remove("selectedEle")
         }
-        let templateAreaDiv = document.getElementById("templateArea")
+        selectedEle.classList.add("selectedEle")
+        this.contentType = selectedEle.getAttribute("type")
+      },
+      cancelSelectedElement(e) {
         let selectedItem = document.getElementsByClassName("selectedItem")[0];
-
-        let childElement
-        switch (contentType) {
-          case "text":
-            childElement = document.createElement("div");
-            childElement.textContent = "Hello!"
-            childElement.fontWidth = FONT_WIDTH
-            childElement.exampleData = 'Hello!'
-            childElement.fontHeight = FONT_HEIGHT
-            childElement.fontType = FONT_TYPE
-            childElement.setAttribute("type", "text")
-            childElement.style = "position: absolute;cursor:default;transform:scaleX(1.5);font-weight:bolder;text-align:center;vertical-align:center;font-size:13px;padding:0px 10px"
-            break;
-          case 'barCode':
-            childElement = document.createElement("img");
-            childElement.classList.add("barCodeEle")
-            childElement.setAttribute("type", "barCode")
-            childElement.style = "position: absolute;cursor:default;transform:scale(0.6,0.6);"
-            childElement.barCodeType = BARCODE_TYPE
-            childElement.barCodeValuePosition = BARCODE_POS
-            childElement.displayBarCodeValue = BARCODE_DISPLAY_VALUE
-            childElement.barCodeWidth = BARCODE_WIDTH
-            childElement.barCodeHeight = BARCODE_HEIGHT
-            childElement.exampleData = 'Hello!'
-            JsBarCode(childElement, childElement.exampleData, {
-              format: this.barCodeType,
-              lineColor: "black",
-              width: 2,
-              height: this.barCodeHeight,
-              displayValue: true
-            })
-            break;
-        }
         if (selectedItem) {
           selectedItem.classList.remove("selectedItem")
         }
-        childElement.horizenPosition = DEFAULT_HORIZEN_POS
-        childElement.verticalPosition = DEFAULT_VERTICAL_POS
-        childElement.style.top = DEFAULT_VERTICAL_POS + "px"
-        childElement.style.left = DEFAULT_HORIZEN_POS + "px"
-        //childElement.draggable=false
-        childElement.addEventListener("click", this.selectedItemFun, true)
-        childElement.addEventListener("contextmenu", this.popMenu)
-        childElement.classList.add("templateElement");
-        childElement.classList.add("selectedItem");
-        //
-        setTimeout(function () {
-          let selected = document.getElementsByClassName("selectedItem")[0];
-          let clientRect = selected.getBoundingClientRect();
-          selected.style.left = selected.horizenPosition - (selected.offsetWidth - clientRect.width) / 2 + "px"
-          selected.style.top = selected.verticalPosition - (selected.offsetHeight - clientRect.height) / 2 + "px"
-        }, 0)
-        templateAreaDiv.appendChild(childElement)
+        let selectedEle = document.getElementsByClassName("selectedEle")[0];
+        if (selectedEle) {
+          selectedEle.classList.remove("selectedEle")
+        }
       },
       deleteElement() {
         let template = this.editTemMenu.target
-        let htmlCollection = document.getElementsByClassName("selectedItem");
-        if (htmlCollection.length == 0) {
-          this.$message.warning("删除需要选定一个元素")
-          return
-        }
-        let selected = htmlCollection[0]
-        if (this.attachEle == selected) {
-          this.attachEle = undefined
-        }
-        template.removeChild(selected)
-      },
-      submitTemplate() {
-        let templateAreaDiv = document.getElementById("templateArea");
-        this.addedEle = []
-
-        templateAreaDiv.childNodes.forEach((item, index) => {
-          let contentType = item.getAttribute("type")
-          let tmp = {}
-          tmp.left = item.offsetLeft
-          tmp.top = item.offsetTop
-          tmp.type = contentType
-          tmp.valueName = item.valueName
-          tmp.horizenPosition = item.offsetLeft
-          tmp.verticalPosition = item.offsetTop
-
-          switch (contentType) {
-            case "text":
-              tmp.fontType = item.fontType
-              tmp.fontWidth = item.fontWidth
-              tmp.fontHeight = item.fontHeight
-              break
-            case 'barCode':
-              tmp.displayBarCodeValue = item.displayBarCodeValue
-              tmp.barCodeHeight = item.barCodeHeight
-              tmp.barCodeWidth = item.barCodeWidth
-              tmp.barCodeValuePosition = item.barCodeValuePosition
-              tmp.barCodeType = item.barCodeType
-              break
-
+        if (this.editTemMenu.menuType === 'template') {
+          let htmlCollection = document.getElementsByClassName("selectedItem");
+          if (htmlCollection.length == 0) {
+            this.$message.warning("删除需要选定一个元素")
+            return
           }
-          this.addedEle.push(tmp)
-        })
-        this.$http.post("http://localhost:7538/template/print", {
-          "elements": this.addedEle,
-          "printWidth": templateAreaDiv.clientWidth,
-          "printHeight": templateAreaDiv.clientHeight,
-          "html": templateAreaDiv.innerHTML,
-          "templateName": "template1"
-        }, {
-          headers: {
-            post: {
-              'Content-Type': 'application/json'
-            }
+          let selected = htmlCollection[0]
+          if (this.attachEle == selected) {
+            this.attachEle = undefined
           }
-        }).then(
-          console.log("请求成功")
-        )
+          template.removeChild(selected)
+        } else if (this.editTemMenu.menuType === 'area') {
+          let htmlCollection = document.getElementsByClassName("selectedEle");
+          if (htmlCollection.length == 0) {
+            this.$message.warning("删除需要选定一个元素")
+            return
+          }
+          let selected = htmlCollection[0]
+          if (this.attachEle == selected) {
+            this.attachEle = undefined
+          }
+          template.removeChild(selected)
+        }
       },
       popMenu(flag, e) {
         var event = e || window.event
@@ -696,10 +564,24 @@
             this.editTemMenu.target = e.currentTarget
             editMenuUl = document.getElementById("editTemMenu");
             this.editTemMenu.menuType = 'area'
+            this.selectedItemFun(event)
           } else {
             editMenuUl = document.getElementById("editEleMenu");
-            this.attachEle = event.currentTarget
-            this.selectedItemFun(event)
+            if (this.editTemMenu.menuType === 'template') {
+              let selectedEle = e.currentTarget.childNodes[0]
+              this.attachEle = selectedEle
+              let preSelectedEle = document.getElementsByClassName("selectedEle")[0]
+              if (preSelectedEle && selectedEle != preSelectedEle) {
+                preSelectedEle.classList.remove("selectedEle")
+              }
+              selectedEle.classList.add("selectedEle")
+              this.selectedItemFun(e)
+              this.contentType = selectedEle.getAttribute("type")
+            } else {
+              this.attachEle = event.currentTarget
+              this.selectedElementFun(event)
+            }
+
           }
           editMenuUl.style.position = "absolute"
           editMenuUl.style.left = _x + "px";
@@ -718,76 +600,21 @@
         this.attachEle = undefined
         document.removeEventListener("mousedown", this.closeMenu, false)
       },
-      openDialog() {
-        this.centerDialogVisible = true
-        let selected = document.getElementsByClassName("selectedItem")[0];
-        this.loadData(this, selected)
+      openEditTemplateDialog() {
+        this.editElementDialogVisible = true
       },
-      loadData(selected, element) {
-        if (!element) {
-          element = selected
-        }
-        selected.horizenPosition = element.horizenPosition
-        selected.verticalPosition = element.verticalPosition
-        selected.valueName = element.valueName
-        selected.exampleData = element.exampleData
-        let contentType = element.type
-        switch (contentType) {
-          case 'text':
-            selected.fontHeight = element.fontHeight
-            selected.fontWidth = element.fontWidth
-            break
-          case 'barCode':
-            selected.barCodeType = element.barCodeType
-            selected.barCodeHeight = element.barCodeHeight
-            selected.barCodeWidth = element.barCodeWidth
-            selected.barCodeValuePosition = element.barCodeValuePosition
-            selected.displayBarCodeValue = element.displayBarCodeValue
-            break
+      closeEditTemplateDialog(e,flag) {
+        this.editElementDialogVisible = false
+        if (flag === 'apply') {
+          console.log(e)
+          let elements = document.querySelector(".selectedEle");
+          console.log(elements)
         }
       },
-      closeDialog(flag) {
-        this.centerDialogVisible = false
-        if (flag && flag === 'apply') {
-          let selected = document.getElementsByClassName("selectedItem")[0];
-          let clientRect = selected.getBoundingClientRect();
-          selected.style.left = this.horizenPosition - (selected.offsetWidth - clientRect.width) / 2 + "px"
-          selected.style.top = this.verticalPosition - (selected.offsetHeight - clientRect.height) / 2 + "px"
-          selected.horizenPosition = this.horizenPosition
-          selected.verticalPosition = this.verticalPosition
-          selected.exampleData = this.exampleData
-          selected.valueName = this.valueName
-          //selected.style.fontSize = "50px"
-          let contentType = selected.getAttribute("type");
-          if (contentType === 'text') {
-            selected.style.transform = "scale(" + (parseInt(this.fontWidth) + 1.5) + "," + (parseInt(this.fontHeight) + 1) + ")"
-            selected.fontType = this.fontType
-            selected.fontWidth = this.fontWidth
-            selected.fontHeight = this.fontHeight
-            selected.innerText = this.exampleData
-          } else if (contentType === 'barCode') {
-            selected.barCodeType = this.barCodeType
-            selected.barCodeHeight = parseInt(this.barCodeHeight)
-            selected.barCodeWidth = this.barCodeWidth
-            selected.barCodeValuePosition = this.barCodeValuePosition
-            selected.displayBarCodeValue = this.displayBarCodeValue
-            try {
-              JsBarCode(selected, this.exampleData, {
-                format: this.barCodeType,
-                displayValue: this.displayBarCodeValue,
-                height: this.barCodeHeight,
-                width: this.barCodeWidth,
-                textPosition: this.barCodeValuePosition
-              })
-            } catch (e) {
-              this.$message.warning(e)
-            }
-          }
-        }
-      },
-      closeEditTemplateDialog() {
-        this.editTemplateDialogVisible = false
-        let templateAreaDiv = document.getElementById("templateArea");
+      closeEditAreaDialog() {
+        this.editAreaDialogVisible = false
+        // let templateAreaDiv = document.getElementById("templateArea");
+        let templateAreaDiv = this.editTemMenu.target
         templateAreaDiv.style.width = this.printAreaWidth + 'px'
         templateAreaDiv.style.height = this.printAreaHeight + 'px'
       },
@@ -798,17 +625,18 @@
         let index = 0
 
         for (let i = 0; i < parent.childNodes.length; i++) {
-          let e = parent.childNodes[i]
-          if (e.tagName === 'LI')
+          let child = parent.childNodes[i]
+          if (child.style && child.style.display != "none" && child.tagName === 'LI')
             index++
-          if (e == currentTarget) {
+          if (child == currentTarget) {
             break
           }
         }
         contentTypeSelect.style.position = 'absolute'
-        contentTypeSelect.style.left = parent.offsetLeft + parent.offsetWidth + 'px'
+        contentTypeSelect.style.left = parent.offsetLeft + parent.offsetWidth - 1 + 'px'
         contentTypeSelect.style.top = parent.offsetTop + currentTarget.offsetHeight * (index - 1) + 'px'
         this.contentTypeSelectVisible = true
+        this.editTemMenu.visible = true
       },
       closeContentTypeSelect(e) {
         let contentTypeSelect = document.getElementById("contentTypeSelect");
@@ -820,7 +648,7 @@
         }
       },
       clearTemplateArea(e) {
-        let templateAreaDiv = document.getElementById("templateArea");
+        let templateAreaDiv = this.editTemMenu.target
         templateAreaDiv.innerHTML = "";
       },
       moveByDirectKey(e) {
@@ -841,6 +669,9 @@
             selectedItem.style.top = Math.min(templateAreaDiv.offsetHeight - 4 - selectedItem.offsetHeight, selectedItem.offsetTop + 1) + "px";
             break;
         }
+      },
+      closeEditTemMenu(e) {
+        this.editTemMenu.visible = false
       }
     }
   }
@@ -897,9 +728,9 @@
   .selectedEle {
     z-index: 99;
     background-color: #f1f1f1;
-    -moz-box-shadow: 1px 1px 5px #333333;
-    -webkit-box-shadow: 1px 1px 5px #333333;
-    box-shadow: 1px 1px 5px #333333;
+    -moz-box-shadow: 2px 2px 5px #333333;
+    -webkit-box-shadow: 2px 2px 5px #333333;
+    box-shadow: 2px 2px 5px #333333;
   }
 
   .templateElement {
