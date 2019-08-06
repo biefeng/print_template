@@ -16,6 +16,7 @@
       <!--<el-tooltip class="item" effect="light" content="从当前选定的元素开始生效，但不影响其以上的元素。" placement="right">
         <li>设置行高</li>
       </el-tooltip>-->
+      <li @mousedown="deleteElement">删除区域</li>
       <li @mousedown="clearTemplateArea">清除元素</li>
     </ul>
 
@@ -55,7 +56,8 @@
       </span>
     </el-dialog>
     <br/>
-    <el-button style="position: relative;margin: 5px 0px 10px 685px;display:inline-block;" type="primary">保存模板
+    <el-button style="position: relative;margin: 5px 0px 10px 685px;display:inline-block;" type="primary"
+               @click="submitTemplate">保存模板
     </el-button>
     <el-button style="position: relative;display:inline-block;" type="primary" @click="e=>{this.$router.back()}">返回
     </el-button>
@@ -535,9 +537,11 @@
           }
           template.removeChild(selected)
         } else if (this.editTemMenu.menuType === 'area') {
+
           let htmlCollection = document.getElementsByClassName("selectedEle");
           if (htmlCollection.length == 0) {
-            this.$message.warning("删除需要选定一个元素")
+            let root = document.getElementById("template");
+            root.removeChild(template)
             return
           }
           let selected = htmlCollection[0]
@@ -586,7 +590,7 @@
           editMenuUl.style.position = "absolute"
           editMenuUl.style.left = _x + "px";
           editMenuUl.style.top = _y + "px";
-          document.addEventListener("mousedown", this.closeMenu, false)
+          document.addEventListener("mousedown", this.closeMenu, {capture: false, once: true})
         }
       },
       popTemplateMenu(e) {
@@ -603,12 +607,32 @@
       openEditTemplateDialog() {
         this.editElementDialogVisible = true
       },
-      closeEditTemplateDialog(e,flag) {
+      closeEditTemplateDialog(e, flag) {
         this.editElementDialogVisible = false
         if (flag === 'apply') {
           console.log(e)
           let elements = document.querySelector(".selectedEle");
-          console.log(elements)
+          let contentType = elements.getAttribute("type");
+          elements.horizenPosition = this.horizenPosition
+          elements.verticalPosition = this.verticalPosition
+          elements.valueName = this.valueName
+          elements.exampleData = this.exampleData
+          switch (contentType) {
+            case 'text':
+              elements.fontWidth = this.fontWidth
+              elements.fontHeight = this.fontHeight
+              elements.fontType = this.fontType
+              break
+
+            case 'barCode':
+              elements.barCodeValuePosition = this.barCodeValuePosition
+              elements.displayBarCodeValue = this.displayBarCodeValue
+              elements.barCodeWidth = this.barCodeWidth
+              elements.barCodeHeight = this.barCodeHeight
+              elements.barCodeType = this.barCodeType
+              break
+
+          }
         }
       },
       closeEditAreaDialog() {
@@ -672,6 +696,64 @@
       },
       closeEditTemMenu(e) {
         this.editTemMenu.visible = false
+      },
+      submitTemplate() {
+        let xmlBuilder = new epson.ePOSBuilder()
+
+        let template = document.getElementById("template");
+        let childrenNodes = template.childNodes;
+        let elements = []
+
+        function handleNodes(nodes) {
+          nodes.forEach((item, index) => {
+            //console.log(item)
+            let element = {}
+            let contentType = item.getAttribute("type");
+            element['type'] = contentType
+            element['valueName'] = item.key
+            element['horizenLocation'] = item.horizenPosition
+            element['verticalPosition'] = item.verticalPosition
+            element['exampleData'] = item.exampleData
+            let attr = {}
+            switch (contentType) {
+              case 'text':
+                attr['width'] = item.fontWidth
+                attr['height'] = item.fontHeight
+                xmlBuilder.addText(item.exampleData, attr)
+                break
+
+              case 'barCode':
+                attr['barCodeWidth'] = item.barCodeWidth
+                attr['barCodeHeight'] = item.barCodeHeight
+                attr['displayBarCodeValue'] = item.displayBarCodeValue
+                attr['barCodeValuePosition'] = item.barCodeValuePosition
+                break
+              case 'area':
+                xmlBuilder.addPageBegin()
+                xmlBuilder.addPageArea(0, 0, 100, 100)
+                handleNodes(item.childNodes)
+                xmlBuilder.addPageEnd()
+                break
+
+            }
+            elements.push(element)
+          })
+        }
+
+        handleNodes(childrenNodes)
+
+        console.log(xmlBuilder.toString())
+
+        this.$http.post(
+          "http://localhost:7538/print",
+          {
+            id: "1",
+            templateName: "template_name_1",
+            elements: elements
+          }
+        ).then(res => {
+          console.log("打印成功")
+        })
       }
     }
   }
@@ -747,3 +829,4 @@
     cursor: grab;
   }
 </style>
+
