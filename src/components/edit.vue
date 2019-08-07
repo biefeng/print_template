@@ -7,7 +7,7 @@
       <li @mousedown="deleteElement">删除元素</li>
     </ul>
     <ul id="editTemMenu" class="menu" v-show="this.editTemMenu.visible" @mouseleave="closeEditTemMenu">
-      <li @mousedown="editAreaDialogVisible =true" v-show="this.editTemMenu.menuType==='template'">编辑模板</li>
+      <!--<li @mousedown="editAreaDialogVisible =true" v-show="this.editTemMenu.menuType==='template'">编辑模板</li>-->
       <li @mousedown="editAreaDialogVisible =true" v-show="this.editTemMenu.menuType==='area'">编辑区域</li>
       <li @mousedown="function(e) {
       e.stopPropagation()
@@ -16,7 +16,7 @@
       <!--<el-tooltip class="item" effect="light" content="从当前选定的元素开始生效，但不影响其以上的元素。" placement="right">
         <li>设置行高</li>
       </el-tooltip>-->
-      <li @mousedown="deleteElement">删除区域</li>
+      <li @mousedown="deleteElement" v-show="this.editTemMenu.menuType==='area'">删除区域</li>
       <li @mousedown="clearTemplateArea">清除元素</li>
     </ul>
 
@@ -28,10 +28,16 @@
       <li @mousedown="appendElement1($event,'barCode',editTemMenu.menuType)">条形码</li>
     </ul>
 
-    <div id="template" ref="template" @click="cancelSelectedElement"
-         style="position: relative;margin: 10px auto;width: 450px;min-height: 220px;border: 3px solid #a3a3a3;background-color: rgba(218,250,238,0.14);padding:50px 5px 50px 5px">
+    <div style="width: 470px;margin: 10px auto;z-index: -1">
+      <div id="template" ref="template" @click="cancelSelectedElement"
+           style="z-index:10;position: relative;margin: 10px auto;width: 450px;min-height: 220px;border: 3px solid #808080;background-color: rgba(204,204,204,0.81);padding:50px 5px 50px 5px">
+      </div>
+      <el-button style="position: relative;margin: auto;display:inline-block;" type="primary"
+                 @click="submitTemplate">保存模板
+      </el-button>
+      <el-button style="position: relative;display:inline-block;" type="primary" @click="e=>{this.$router.back()}">返回
+      </el-button>
     </div>
-
     <!--***********************-->
 
 
@@ -55,11 +61,7 @@
       </span>
     </el-dialog>
     <br/>
-    <el-button style="position: relative;margin: 5px 0px 10px 685px;display:inline-block;" type="primary"
-               @click="submitTemplate">保存模板
-    </el-button>
-    <el-button style="position: relative;display:inline-block;" type="primary" @click="e=>{this.$router.back()}">返回
-    </el-button>
+
     <!--<div id="templateArea"
          style="position: relative;margin: 10px auto;width: 450px;height: 220px;border: 3px solid #a3a3a3;background-color: rgba(218,250,238,0.14)">
     </div>-->
@@ -186,7 +188,7 @@
   const BARCODE_WIDTH = 2
   const BARCODE_HEIGHT = 100
   const BARCODE_DISPLAY_VALUE = false
-  const BARCODE_TYPE = 'CODE128'
+  const BARCODE_TYPE = 'code128'
   const BARCODE_POS = 'bottom'
   const DEFAULT_HORIZEN_POS = 100
   const DEFAULT_VERTICAL_POS = 100
@@ -294,19 +296,19 @@
         }],
         barCodeWidth: BARCODE_WIDTH,
         barCodeTypeSelect: [{
-          value: 'CODE128',
+          value: 'code128',
           label: 'CODE128'
         }, {
-          value: 'UPC',
+          value: 'upc',
           label: 'UPC'
         }, {
-          value: 'EAN13',
+          value: 'ean13',
           label: 'EAN13'
         }, {
-          value: 'EAN8',
+          value: 'ean8',
           label: 'EAN8'
         }, {
-          value: 'CODE39',
+          value: 'code39',
           label: 'CODE39'
         }],
         barCodeType: BARCODE_TYPE,
@@ -345,8 +347,8 @@
       draggableElements.forEach(e => {
         let draggable = new PlainDraggable(e);
         draggable.onMove = function (p) {
-          e.horizenPosition=parseInt(p.left - template.offsetLeft - e.parentElement.offsetLeft)
-          e.verticalPosition=parseInt(p.top - template.offsetTop - e.parentElement.offsetTop)
+          e.horizenPosition = parseInt(p.left - template.offsetLeft - e.parentElement.offsetLeft)
+          e.verticalPosition = parseInt(p.top - template.offsetTop - e.parentElement.offsetTop)
           //console.log('left: %d top %d', p.left - template.offsetLeft - e.parentElement.offsetLeft, p.top - template.offsetTop - e.parentElement.offsetTop)
         }
         draggable.onDragStart = selectedElementFun
@@ -386,6 +388,7 @@
           element.style.backgroundColor = 'yellow'
           element.style.width = "100%"
           element.classList.add("selectedItem")
+          element.setAttribute("parent", "template")
           switch (type) {
             case 'area':
               element.setAttribute("type", "area")
@@ -414,6 +417,7 @@
               element.style.height = BARCODE_HEIGHT + "px"
               element.style.lineHeight = BARCODE_HEIGHT + "px"
               let childElement = document.createElement("img");
+              childElement.setAttribute("type", "barCode")
               childElement.classList.add("barCodeEle", "draggableFlag")
               // childElement.style.transform = "scale(0.6,0.6);"
               childElement.style.height = "100%"
@@ -424,6 +428,7 @@
               childElement.barCodeWidth = BARCODE_WIDTH
               childElement.barCodeHeight = BARCODE_HEIGHT
               childElement.exampleData = 'Hello!'
+              element.addEventListener("contextmenu", this.popMenu.bind(this, "barCode"), false)
               element.addEventListener("click", this.selectedItemFun, true)
               element.appendChild(childElement)
               JsBarCode(childElement, childElement.exampleData, {
@@ -443,6 +448,7 @@
           switch (type) {
             case 'text':
               let child = document.createElement("div")
+              child.setAttribute("parent", "area")
               child.classList.add("draggableFlag", "draggableEle")
               child.style.display = "block"
               child.style.position = 'absolute'
@@ -458,6 +464,7 @@
               break
             case 'barCode':
               let barCode = document.createElement("img")
+              barCode.setAttribute("parent", "area")
               barCode.setAttribute("type", "barCode")
               barCode.classList.add("draggableFlag", "draggableEle")
               barCode.style.display = "inline-block"
@@ -636,6 +643,9 @@
               break
 
           }
+          this.barCodeType = BARCODE_TYPE
+          this.barCodeWidth = BARCODE_WIDTH
+          this.ba
         }
       },
       closeEditAreaDialog() {
@@ -710,26 +720,36 @@
         function handleNodes(nodes) {
           nodes.forEach((item, index) => {
             //console.log(item)
+            let parent = item.getAttribute("parent");
+
             let element = {}
             let contentType = item.getAttribute("type");
             element['type'] = contentType
             element['valueName'] = item.key
             element['exampleData'] = item.exampleData
+            if (parent === 'template' && contentType != 'area') {
+              item = item.childNodes[0]
+            }
             let attr = {}
-            attr['x']=item.horizenPosition
-            attr['y']=item.verticalPosition
+            attr['x'] = item.horizenPosition
+            attr['y'] = item.verticalPosition
             switch (contentType) {
               case 'text':
+
                 attr['width'] = item.fontWidth
                 attr['height'] = item.fontHeight
                 xmlBuilder.addText(item.exampleData, attr)
                 break
 
               case 'barCode':
+                if (parent === 'template') {
+                  item = item.childNodes[0]
+                }
                 attr['barCodeWidth'] = item.barCodeWidth
                 attr['barCodeHeight'] = item.barCodeHeight
                 attr['displayBarCodeValue'] = item.displayBarCodeValue
                 attr['barCodeValuePosition'] = item.barCodeValuePosition
+                xmlBuilder.addBarcode(item.exampleData, item.barCodeType, 'none', 'font_a', 2, 32)
                 break
               case 'area':
                 xmlBuilder.addPageBegin()
