@@ -128,11 +128,12 @@
   }
 
   ePOSBuilder.prototype.addText = function (data, attribute) {
-
+    let attrStr = ""
     if (attribute) {
-      let attrStr = ""
-      attribute.keys().forEach(item => {
-          attrStr += item + "=" + "'" + attribute[item] + "' "
+      Object.keys(attribute).forEach(item => {
+          if (attribute[item]!=undefined&&attribute[item]!='undefined'&&attribute!=''){
+            attrStr += item + "=" + "'" + attribute[item] + "' "
+          }
         }
       )
     }

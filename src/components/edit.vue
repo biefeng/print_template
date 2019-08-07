@@ -28,9 +28,8 @@
       <li @mousedown="appendElement1($event,'barCode',editTemMenu.menuType)">条形码</li>
     </ul>
 
-    <div id="template" ref="template"
+    <div id="template" ref="template" @click="cancelSelectedElement"
          style="position: relative;margin: 10px auto;width: 450px;min-height: 220px;border: 3px solid #a3a3a3;background-color: rgba(218,250,238,0.14);padding:50px 5px 50px 5px">
-
     </div>
 
     <!--***********************-->
@@ -346,6 +345,8 @@
       draggableElements.forEach(e => {
         let draggable = new PlainDraggable(e);
         draggable.onMove = function (p) {
+          e.horizenPosition=parseInt(p.left - template.offsetLeft - e.parentElement.offsetLeft)
+          e.verticalPosition=parseInt(p.top - template.offsetTop - e.parentElement.offsetTop)
           //console.log('left: %d top %d', p.left - template.offsetLeft - e.parentElement.offsetLeft, p.top - template.offsetTop - e.parentElement.offsetTop)
         }
         draggable.onDragStart = selectedElementFun
@@ -478,6 +479,7 @@
               break
           }
         }
+        //document.addEventListener("click", this.cancelSelectedElement, {capture: false, once: true})
       },
       selectedItemFun(e) {
         let selected;
@@ -499,7 +501,7 @@
         // selected.onkeydown = this.moveByDirectKey
         //selected.addEventListener("drag", this.ondrag, true)
         //selected.addEventListener("dragstart", this.ondragstart, true)
-        document.addEventListener("click", this.cancelSelectedElement, {capture: false, once: true})
+        //document.addEventListener("click", this.cancelSelectedElement, {capture: false, once: true})
         // this.contentType = selected.getAttribute("type")
         selected.classList.add("selectedItem")
         this.contentType = selected.getAttribute("type")
@@ -622,6 +624,7 @@
               elements.fontWidth = this.fontWidth
               elements.fontHeight = this.fontHeight
               elements.fontType = this.fontType
+              elements.innerText = this.exampleData
               break
 
             case 'barCode':
@@ -711,10 +714,10 @@
             let contentType = item.getAttribute("type");
             element['type'] = contentType
             element['valueName'] = item.key
-            element['horizenLocation'] = item.horizenPosition
-            element['verticalPosition'] = item.verticalPosition
             element['exampleData'] = item.exampleData
             let attr = {}
+            attr['x']=item.horizenPosition
+            attr['y']=item.verticalPosition
             switch (contentType) {
               case 'text':
                 attr['width'] = item.fontWidth
@@ -744,7 +747,7 @@
 
         console.log(xmlBuilder.toString())
 
-        this.$http.post(
+        /*this.$http.post(
           "http://localhost:7538/print",
           {
             id: "1",
@@ -753,7 +756,7 @@
           }
         ).then(res => {
           console.log("打印成功")
-        })
+        })*/
       }
     }
   }
@@ -784,7 +787,6 @@
     list-style: none;
     margin: 0px;
   }
-
 
   ul.menu li:hover {
     background-color: #e8e8e8;

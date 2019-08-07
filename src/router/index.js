@@ -4,7 +4,6 @@ import editTemplate from '@/components/editTemplate'
 import edit from '@/components/edit'
 import listTemplate from '@/components/listTemplate'
 import testKeydown from '@/components/testKeydown'
-import monitor from '@/components/monitor'
 
 import draggable from '@/components/draggable'
 
@@ -43,11 +42,6 @@ export default new Router({
       path: '/',
       name: 'edit',
       component: edit
-    },
-    {
-      path: '/monitor',
-      name: 'monitor',
-      component: monitor
     }
   ]
 })
