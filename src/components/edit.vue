@@ -120,6 +120,17 @@
             </el-option>
           </el-select>
         </div>
+        <div class="prop-div" v-show="contentType==='text'">
+          <span class="label">语言</span>
+          <el-select style="width:120px;margin-left: 10px" v-model="language" placeholder="请选择">
+            <el-option
+              v-for="item in languageSelect"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value">
+            </el-option>
+          </el-select>
+        </div>
         <div class="prop-div" v-show="this.contentType==='barCode'">
           <span class="label">线条宽度</span>
           <el-select v-model="barCodeWidth" style="width:120px;margin-left: 10px" placeholder="请选择">
@@ -182,8 +193,8 @@
   import JsBarCode from 'jsbarcode'
 
 
-  const FONT_WIDTH = 0
-  const FONT_HEIGHT = 0
+  const FONT_WIDTH = 1
+  const FONT_HEIGHT = 1
   const FONT_TYPE = "A"
   const BARCODE_WIDTH = 2
   const BARCODE_HEIGHT = 100
@@ -239,44 +250,45 @@
           label: 'FONT-4'
         }],
         fontType: 'FONT-1',
+        languageSelect: [{
+          value: 'zh-cn',
+          label: '简体中文'
+        }],
+        language: 'zh-cn',
         'selectedItem': {},
         "addedEle": [],
         "attachEle": undefined,
         valueName: '',
         exampleData: '',
-        fontWidthSelect: [{
-          value: '0',
-          label: '0'
-        }, {
-          value: '1',
-          label: '1'
-        }, {
-          value: '2',
-          label: '2'
-        }, {
-          value: '3',
-          label: '3'
-        }, {
-          value: '4',
-          label: '4'
-        }],
+        fontWidthSelect: [
+          {
+            value: '1',
+            label: '1'
+          }, {
+            value: '2',
+            label: '2'
+          }, {
+            value: '3',
+            label: '3'
+          }, {
+            value: '4',
+            label: '4'
+          }],
         fontWidth: FONT_WIDTH,
-        fontHeightSelect: [{
-          value: '0',
-          label: '0'
-        }, {
-          value: '1',
-          label: '1'
-        }, {
-          value: '2',
-          label: '2'
-        }, {
-          value: '3',
-          label: '3'
-        }, {
-          value: '4',
-          label: '4'
-        }],
+        fontHeightSelect: [
+          {
+            value: '1',
+            label: '1'
+          }, {
+            value: '2',
+            label: '2'
+          }, {
+            value: '3',
+            label: '3'
+          }, {
+            value: '4',
+            label: '4'
+          }],
         fontHeight: FONT_HEIGHT,
         barCodeWidthSelect: [{
           value: '2',
@@ -324,11 +336,14 @@
         displayBarCodeValue: BARCODE_DISPLAY_VALUE,
         barCodeValuePositionSelect: [
           {
-            value: 'top',
+            value: 'above',
             label: '上'
           }, {
             value: 'bottom',
             label: '下'
+          }, {
+            value: 'both',
+            label: "上下"
           }
         ],
         barCodeValuePosition: BARCODE_POS,
@@ -344,14 +359,17 @@
       })
       let draggableElements = Array.prototype.slice.call(document.getElementsByClassName("draggableFlag"));
       let selectedElementFun = this.selectedElementFun
+      let handleBarcodePosition = this.handleBarcodePosition
       draggableElements.forEach(e => {
         let draggable = new PlainDraggable(e);
         draggable.onMove = function (p) {
           e.horizenPosition = parseInt(p.left - template.offsetLeft - e.parentElement.offsetLeft)
           e.verticalPosition = parseInt(p.top - template.offsetTop - e.parentElement.offsetTop)
           //console.log('left: %d top %d', p.left - template.offsetLeft - e.parentElement.offsetLeft, p.top - template.offsetTop - e.parentElement.offsetTop)
+          handleBarcodePosition(p)
         }
         draggable.onDragStart = selectedElementFun
+
       })
     },
     mounted() {
@@ -400,9 +418,11 @@
             case  'text':
               element.setAttribute("type", "text")
               element.style.height = "50px"
+
               element.style.lineHeight = "50px"
               let textSpan = document.createElement("span");
               textSpan.style.display = "inline-block"
+              textSpan.style.whiteSpace = "pre"
               textSpan.setAttribute("type", "text")
               textSpan.style.margin = "auto"
               textSpan.classList.add("draggableFlag")
@@ -428,6 +448,7 @@
               childElement.barCodeWidth = BARCODE_WIDTH
               childElement.barCodeHeight = BARCODE_HEIGHT
               childElement.exampleData = 'Hello!'
+              childElement.align = 'left'
               element.addEventListener("contextmenu", this.popMenu.bind(this, "barCode"), false)
               element.addEventListener("click", this.selectedItemFun, true)
               element.appendChild(childElement)
@@ -453,6 +474,7 @@
               child.style.display = "block"
               child.style.position = 'absolute'
               child.style.height = "30px"
+              child.style.whiteSpace = "pre"
               child.setAttribute("type", "text")
               child.style.lineHeight = "30px"
               child.textContent = "你好"
@@ -531,6 +553,8 @@
         if (selectedEle) {
           selectedEle.classList.remove("selectedEle")
         }
+        this.editTemMenu.menuType = 'template'
+        this.editTemMenu.target = document.querySelector("#template")
       },
       deleteElement() {
         let template = this.editTemMenu.target
@@ -562,6 +586,16 @@
       },
       popMenu(flag, e) {
         var event = e || window.event
+
+        let currentTarget = event.currentTarget;
+        let parent = currentTarget.getAttribute("parent");
+        if (parent === 'template') {
+          this.editTemMenu.menuType = 'template'
+        } else if (parent === 'area') {
+          this.editTemMenu.menuType = 'area'
+        }
+
+
         if (event.button == 2) {
           event.stopPropagation()
           event.preventDefault();
@@ -591,7 +625,7 @@
               this.selectedItemFun(e)
               this.contentType = selectedEle.getAttribute("type")
             } else {
-              this.attachEle = event.currentTarget
+              this.attachEle = currentTarget
               this.selectedElementFun(event)
             }
 
@@ -631,6 +665,7 @@
               elements.fontWidth = this.fontWidth
               elements.fontHeight = this.fontHeight
               elements.fontType = this.fontType
+              elements.language = this.language
               elements.innerText = this.exampleData
               break
 
@@ -727,35 +762,58 @@
             element['type'] = contentType
             element['valueName'] = item.key
             element['exampleData'] = item.exampleData
+            element['parent'] = parent
+
             if (parent === 'template' && contentType != 'area') {
               item = item.childNodes[0]
             }
             let attr = {}
-            attr['x'] = item.horizenPosition
-            attr['y'] = item.verticalPosition
+
             switch (contentType) {
               case 'text':
-
+                attr['x'] = item.horizenPosition
+                attr['y'] = item.verticalPosition
                 attr['width'] = item.fontWidth
                 attr['height'] = item.fontHeight
-                xmlBuilder.addText(item.exampleData, attr)
+                attr['lang'] = item.language
+                attr['list'] = false
+                xmlBuilder.addTag('text', item.exampleData + "\n", attr)
+                element['attr'] = attr
                 break
 
               case 'barCode':
-                if (parent === 'template') {
-                  item = item.childNodes[0]
+                attr['width'] = item.barCodeWidth
+                attr['height'] = item.barCodeHeight
+                if (!item.displayBarCodeValue)
+                  attr['hri'] = "none"
+                else {
+                  attr['hri'] = item.barCodeValuePosition
                 }
-                attr['barCodeWidth'] = item.barCodeWidth
-                attr['barCodeHeight'] = item.barCodeHeight
-                attr['displayBarCodeValue'] = item.displayBarCodeValue
-                attr['barCodeValuePosition'] = item.barCodeValuePosition
-                xmlBuilder.addBarcode(item.exampleData, item.barCodeType, 'none', 'font_a', 2, 32)
+                attr['type'] = item.barCodeType
+                attr['align'] = item.align
+                attr['font'] = 'font_a'
+                if (parent === 'area')
+                  xmlBuilder.addPagePosition(item.horizenPosition, item.verticalPosition)
+                xmlBuilder.addTag('barcode', item.exampleData, attr)
+                element['attr'] = attr
                 break
               case 'area':
+                let pageStart = {}
+                pageStart['type'] = 'pageStart'
+                /*---------*/
                 xmlBuilder.addPageBegin()
+                attr['x'] = 0
+                attr['y'] = 0
+                attr['width'] = 576
+                attr['height'] = 300
+                elements.push(pageStart)
+                pageStart['attr'] = attr
                 xmlBuilder.addPageArea(0, 0, 100, 100)
                 handleNodes(item.childNodes)
                 xmlBuilder.addPageEnd()
+                let pageEnd = {}
+                pageEnd['type'] = 'pageEnd'
+                elements.push(pageEnd)
                 break
 
             }
@@ -764,10 +822,11 @@
         }
 
         handleNodes(childrenNodes)
-
+        xmlBuilder.addFeed()
+        xmlBuilder.addCut()
         console.log(xmlBuilder.toString())
 
-        /*this.$http.post(
+        this.$http.post(
           "http://localhost:7538/print",
           {
             id: "1",
@@ -776,7 +835,30 @@
           }
         ).then(res => {
           console.log("打印成功")
-        })*/
+        })
+      },
+      handleBarcodePosition(e) {
+
+        let template = document.querySelector("#template");
+
+        let element = document.querySelector(".selectedEle");
+        let parent = element.getAttribute("parent");
+        let type = element.getAttribute("type");
+        if ((!parent || parent != 'area') && type && type === 'barCode') {
+          let offset = e.left - template.offsetLeft;
+          let parentElement = element.parentElement;
+          if (offset < 20) {
+            parentElement.style.textAlign = 'left'
+            element.align = 'left'
+          } else if (offset > 20 && offset < parentElement.clientWidth / 2) {
+            parentElement.style.textAlign = 'center'
+            element.align = 'center'
+          } else {
+            parentElement.style.textAlign = 'right'
+            element.align = 'right'
+          }
+          element.style.transform = "translate(0px, 0px)"
+        }
       }
     }
   }

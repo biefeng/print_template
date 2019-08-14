@@ -131,7 +131,7 @@
     let attrStr = ""
     if (attribute) {
       Object.keys(attribute).forEach(item => {
-          if (attribute[item]!=undefined&&attribute[item]!='undefined'&&attribute!=''){
+          if (attribute[item] != undefined && attribute[item] != 'undefined' && attribute != '') {
             attrStr += item + "=" + "'" + attribute[item] + "' "
           }
         }
@@ -141,6 +141,22 @@
     this.message += "<text " + attrStr + ">" + escapeMarkup(data) + "</text>";
     return this
   };
+
+  ePOSBuilder.prototype.addTag = function (tagName, data, attribute) {
+    let attrStr = ""
+    if (attribute) {
+      Object.keys(attribute).forEach(item => {
+          if (attribute[item] != undefined && attribute[item] != 'undefined' && attribute != '') {
+            attrStr += item + "=" + "'" + attribute[item] + "' "
+          }
+        }
+      )
+    }
+
+    this.message += "<"+tagName+" " + attrStr + ">" + escapeMarkup(data) + "</"+tagName+">";
+    return this
+  };
+
   ePOSBuilder.prototype.addTextLang = function (lang) {
     this.message += '<text lang="' + lang + '"/>';
     return this
