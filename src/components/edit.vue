@@ -417,9 +417,9 @@
               break
             case  'text':
               element.setAttribute("type", "text")
-              element.style.height = "50px"
+              // element.style.height = "50px"
 
-              element.style.lineHeight = "50px"
+              // element.style.lineHeight = "50px"
               let textSpan = document.createElement("span");
               textSpan.style.display = "inline-block"
               textSpan.style.whiteSpace = "pre"
@@ -649,7 +649,34 @@
       },
       openEditTemplateDialog() {
         this.editElementDialogVisible = true
+        let selectedEle = document.querySelector(".selectedEle");
+        this.loadData(this, selectedEle)
       },
+      loadData(element, selected) {
+        if (!selected) {
+          return
+        }
+        element.horizenPosition = selected.horizenPosition
+        element.verticalPosition = selected.verticalPosition
+        element.valueName = selected.valueName
+        element.exampleData = selected.exampleData
+
+        let contentType = selected.getAttribute("type")
+        switch (contentType) {
+          case 'text':
+            element.fontHeight = selected.fontHeight
+            element.fontWidth = selected.fontWidth
+            break
+          case 'barCode':
+            element.barCodeType = selected.barCodeType
+            element.barCodeHeight = selected.barCodeHeight
+            element.barCodeWidth = selected.barCodeWidth
+            element.barCodeValuePosition = selected.barCodeValuePosition
+            element.displayBarCodeValue = selected.displayBarCodeValue
+            break
+        }
+      },
+
       closeEditTemplateDialog(e, flag) {
         this.editElementDialogVisible = false
         if (flag === 'apply') {
@@ -663,6 +690,7 @@
           switch (contentType) {
             case 'text':
               elements.fontWidth = this.fontWidth
+              // elements.style.fontSize="55px"
               elements.fontHeight = this.fontHeight
               elements.fontType = this.fontType
               elements.language = this.language
@@ -675,6 +703,17 @@
               elements.barCodeWidth = this.barCodeWidth
               elements.barCodeHeight = this.barCodeHeight
               elements.barCodeType = this.barCodeType
+              try {
+                JsBarCode(elements, this.exampleData, {
+                  format: this.barCodeType,
+                  displayValue: this.displayBarCodeValue,
+                  height: this.barCodeHeight,
+                  width: this.barCodeWidth,
+                  textPosition: this.barCodeValuePosition
+                })
+              } catch (e) {
+                this.$message.warning(e)
+              }
               break
 
           }
@@ -776,8 +815,13 @@
                 attr['width'] = item.fontWidth
                 attr['height'] = item.fontHeight
                 attr['lang'] = item.language
+                attr['align'] = 'left'
                 attr['list'] = false
-                xmlBuilder.addTag('text', item.exampleData + "\n", attr)
+                let str = item.exampleData;
+                if (!str || str === 'undefind') {
+                  str = ''
+                }
+                xmlBuilder.addTag('text', str + "\n", attr)
                 element['attr'] = attr
                 break
 
@@ -825,6 +869,7 @@
         xmlBuilder.addFeed()
         xmlBuilder.addCut()
         console.log(xmlBuilder.toString())
+        console.log(elements)
 
         this.$http.post(
           "http://localhost:7538/print",
