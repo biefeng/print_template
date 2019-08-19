@@ -698,8 +698,15 @@
               break
 
             case 'barCode':
+              let parent = elements.getAttribute("parent");
+              if (parent==='template'){
+                let parentElement = elements.parentElement;
+                parentElement.style.height = this.barCodeHeight + "px"
+                parentElement.style.lineHeight = this.barCodeHeight + "px"
+              }
               elements.barCodeValuePosition = this.barCodeValuePosition
               elements.displayBarCodeValue = this.displayBarCodeValue
+              elements.style.height=this.barCodeHeight+"px"
               elements.barCodeWidth = this.barCodeWidth
               elements.barCodeHeight = this.barCodeHeight
               elements.barCodeType = this.barCodeType
@@ -709,7 +716,13 @@
                   displayValue: this.displayBarCodeValue,
                   height: this.barCodeHeight,
                   width: this.barCodeWidth,
-                  textPosition: this.barCodeValuePosition
+                  textPosition: (function (e) {
+                    if (e === 'above') {
+                      return 'top'
+                    }else {
+                      return 'bottom'
+                    }
+                  })(this.barCodeValuePosition)
                 })
               } catch (e) {
                 this.$message.warning(e)
@@ -795,17 +808,17 @@
           nodes.forEach((item, index) => {
             //console.log(item)
             let parent = item.getAttribute("parent");
-
-            let element = {}
-            let contentType = item.getAttribute("type");
-            element['type'] = contentType
-            element['valueName'] = item.key
-            element['exampleData'] = item.exampleData
-            element['parent'] = parent
-
             if (parent === 'template' && contentType != 'area') {
               item = item.childNodes[0]
             }
+            let element = {}
+            let contentType = item.getAttribute("type");
+            element['type'] = contentType
+            element['valueName'] = item.valueName
+            element['exampleData'] = item.exampleData
+            element['parent'] = parent
+
+
             let attr = {}
 
             switch (contentType) {
