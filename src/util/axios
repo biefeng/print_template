@@ -2,7 +2,8 @@ import axios from 'axios'
 
 axios.defaults.withCredentials = true
 const fetchUtil = axios.create({
-  baseURL: 'http://localhost:9999/'
+  baseURL: 'http://localhost:80/',
+  headers: {"app": "nosession", "shopId": -1}
 })
 
 fetchUtil.interceptors.request.use(function (config) {

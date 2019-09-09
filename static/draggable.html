@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+</head>
+<body>
+<div id="container" style="position: relative;border: 2px solid darkgrey;width: 300px;height: 800px;margin: auto">
+  <div class="moved"
+       style="background-color: darkgrey;width: 300px;height: 100px;position: relative;margin-top: 20px"></div>
+  <div class="moved" style="background-color: red;width: 300px;height: 100px;position: relative"></div>
+  <div class="moved" style="background-color: yellow;width: 300px;height: 100px;position: relative"></div>
+  <div class="moved" style="background-color: orange;width: 300px;height: 100px;position: relative"></div>
+  <div class="moved" style="background-color: black;width: 300px;height: 100px;position: relative"></div>
+</div>
+</body>
+
+<script>
+
+  let currentTarget={}
+
+  function moveElement(e) {
+    let varX = (e.pageX - currentTarget.position.currentCursorPositionX + currentTarget.position.currentPositionX);
+    let parentRect = currentTarget.parentNode.getBoundingClientRect();
+    let rect = currentTarget.getBoundingClientRect();
+    let borderTopWidth = currentTarget.parentNode.style.borderTopWidth;
+    if (borderTopWidth && borderTopWidth.length >= 3) {
+      borderTopWidth = parseInt(borderTopWidth.substr(0, borderTopWidth.indexOf("px")))
+    }
+
+    let borderRightWidth = currentTarget.parentNode.style.borderRightWidth;
+    if (borderRightWidth && borderRightWidth.length >= 3) {
+      borderRightWidth = parseInt(borderRightWidth.substr(0, borderRightWidth.indexOf("px")))
+    }
+
+    let borderBottomWidth = currentTarget.parentNode.style.borderBottomWidth;
+    if (borderBottomWidth && borderBottomWidth.length >= 3) {
+      borderBottomWidth = parseInt(borderBottomWidth.substr(0, borderBottomWidth.indexOf("px")))
+    }
+
+    let borderLeftWidth = currentTarget.parentNode.style.borderLeftWidth;
+    if (borderLeftWidth && borderLeftWidth.length >= 3) {
+      borderLeftWidth = parseInt(borderLeftWidth.substr(0, borderLeftWidth.indexOf("px")))
+    }
+
+
+    let rightBound = parentRect.width - rect.width - borderLeftWidth - borderRightWidth
+    if (varX < 0)
+      varX = 0
+    if (varX > rightBound) {
+      varX = rightBound
+    }
+
+    let varY = (e.pageY - currentTarget.position.currentCursorPositionY + currentTarget.position.currentPositionY);
+    let bottomBound = parentRect.height - rect.height - borderTopWidth - borderBottomWidth
+    if (varY < 0)
+      varY = 0
+    if (varY > bottomBound) {
+      varY = bottomBound
+    }
+    currentTarget.style.left = varX + "px"
+    currentTarget.style.top = varY + "px"
+    if (onMove && onMove instanceof Function) {
+      onMove(e, {left: varX, top: varY})
+    }
+  }
+
+  function bindEvent(e) {
+    currentTarget = e.currentTarget
+    if (!currentTarget.position) {
+      currentTarget.position = {
+        currentPositionX: 0,
+        currentPositionY: 0,
+        currentCursorPositionX: 0,
+        currentCursorPositionY: 0
+      }
+    }
+    document.addEventListener("mousemove", moveElement)
+    currentTarget.position.currentCursorPositionX = e.pageX
+    currentTarget.position.currentCursorPositionY = e.pageY
+    if (onDragStart && onDragStart instanceof Function) {
+      onDragStart(e)
+    }
+  }
+
+  function removeEvent(e) {
+    currentTarget.position.currentPositionX = e.pageX - currentTarget.position.currentCursorPositionX + currentTarget.position.currentPositionX
+    currentTarget.position.currentPositionY = e.pageY - currentTarget.position.currentCursorPositionY + currentTarget.position.currentPositionY
+    document.removeEventListener("mousemove", moveElement)
+    if (onDragEnd && onDragEnd instanceof Function) {
+      onDragEnd(e)
+    }
+  }
+
+  function applyDraggable(container) {
+    if (container && container.children) {
+      for (let i = 0; i < container.children.length; i++) {
+        let e = container.children[i]
+        e.style.position = "absolute"
+        e.addEventListener("mousedown", bindEvent)
+      }
+      document.addEventListener("mouseup", removeEvent)
+    }
+  }
+</script>
+</html>

@@ -1,11 +1,12 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import editTemplate from '@/components/editTemplate'
-import edit from '@/components/edit'
+import edit from '@/components/templateEdit'
 import listTemplate from '@/components/listTemplate'
 import testKeydown from '@/components/testKeydown'
 
 import draggable from '@/components/draggable'
+import toolBar from '@/components/toolBar'
 
 import sortable from '@/components/sortable'
 
@@ -37,6 +38,11 @@ export default new Router({
       path: '/sortable',
       name: 'sortable',
       component: sortable
+    },
+    {
+      path: '/toolBar',
+      name: 'toolBar',
+      component: toolBar
     },
     {
       path: '/',

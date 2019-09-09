@@ -26,9 +26,10 @@
       </li>
       <li @mousedown="appendElement1($event,'text',editTemMenu.menuType)">文本</li>
       <li @mousedown="appendElement1($event,'barCode',editTemMenu.menuType)">条形码</li>
+      <li @mousedown="appendElement1($event,'feed',editTemMenu.menuType)">走纸</li>
     </ul>
 
-    <div style="width: 470px;margin: 10px auto;z-index: -1">
+    <div style="width: 470px;z-index: -1;float: left">
       <div id="template" ref="template" @click="cancelSelectedElement"
            style="z-index:10;position: relative;margin: 10px auto;width: 450px;min-height: 220px;border: 3px solid #808080;background-color: rgba(204,204,204,0.81);padding:50px 5px 50px 5px">
       </div>
@@ -38,34 +39,8 @@
       <el-button style="position: relative;display:inline-block;" type="primary" @click="e=>{this.$router.back()}">返回
       </el-button>
     </div>
-    <!--***********************-->
 
-
-    <el-dialog
-      title="提示"
-      :visible.sync="editAreaDialogVisible"
-      width="30%"
-      center>
-      <div class="prop-div">
-        <span class="label">宽度</span>
-        <el-input
-          style="width: 120px" v-model="printAreaWidth" placeholder="打印区域宽度"></el-input>
-      </div>
-      <div class="prop-div">
-        <span class="label">高度</span>
-        <el-input style="width: 120px" v-model="printAreaHeight" placeholder="打印区域高度"></el-input>
-      </div>
-      <span slot="footer" class="dialog-footer">
-        <el-button @click="editAreaDialogVisible = false">取 消</el-button>
-        <el-button type="primary" @click="closeEditAreaDialog">确 定</el-button>
-      </span>
-    </el-dialog>
-    <br/>
-
-    <!--<div id="templateArea"
-         style="position: relative;margin: 10px auto;width: 450px;height: 220px;border: 3px solid #a3a3a3;background-color: rgba(218,250,238,0.14)">
-    </div>-->
-    <el-dialog title="编辑格式" :visible.sync="editElementDialogVisible" width="30%" center>
+    <div style="border: 1px solid red;float: left;margin-left: 30px;width: 500px">
       <span style="/*display: block;*/margin-top: 10px;">
         <div class="prop-div">
           <span class="label">水平定位</span>
@@ -75,7 +50,7 @@
           <span class="label">垂直定位</span>
           <el-input v-model="verticalPosition" style="width: 120px;margin-left: 10px" placeholder="请输入内容"></el-input>
         </div>
-        <div class="prop-div" v-show="printMode==1">
+        <div class="prop-div">
           <span class="label">行高</span>
           <el-input v-model="lineHeight" style="width: 120px;margin-left: 10px" placeholder="请输入内容"></el-input>
         </div>
@@ -180,10 +155,42 @@
           </el-select>
         </div>
       </span>
+      <div style="text-align: center;margin: 10px auto">
+        <span slot="footer" class="dialog-footer">
+          <el-button @click="closeEditTemplateDialog($event,'cancel')">取 消</el-button>
+          <el-button type="primary" @click="closeEditTemplateDialog($event,'apply')">确 定</el-button>
+        </span>
+      </div>
+    </div>
+    <!--***********************-->
+
+
+    <el-dialog
+      title="提示"
+      :visible.sync="editAreaDialogVisible"
+      width="30%"
+      center>
+      <div class="prop-div">
+        <span class="label">宽度</span>
+        <el-input
+          style="width: 120px" v-model="printAreaWidth" placeholder="打印区域宽度"></el-input>
+      </div>
+      <div class="prop-div">
+        <span class="label">高度</span>
+        <el-input style="width: 120px" v-model="printAreaHeight" placeholder="打印区域高度"></el-input>
+      </div>
       <span slot="footer" class="dialog-footer">
-        <el-button @click="closeEditTemplateDialog($event,'cancel')">取 消</el-button>
-        <el-button type="primary" @click="closeEditTemplateDialog($event,'apply')">确 定</el-button>
+        <el-button @click="editAreaDialogVisible = false">取 消</el-button>
+        <el-button type="primary" @click="closeEditAreaDialog">确 定</el-button>
       </span>
+    </el-dialog>
+    <br/>
+
+    <!--<div id="templateArea"
+         style="position: relative;margin: 10px auto;width: 450px;height: 220px;border: 3px solid #a3a3a3;background-color: rgba(218,250,238,0.14)">
+    </div>-->
+    <el-dialog title="编辑格式" :visible.sync="editElementDialogVisible" width="30%" center>
+
     </el-dialog>
   </div>
 </template>
@@ -687,10 +694,12 @@
           elements.verticalPosition = this.verticalPosition
           elements.valueName = this.valueName
           elements.exampleData = this.exampleData
+          if (this.lineHeight && this.lineHeight > 10) {
+            elements.lineHeight = this.lineHeight
+          }
           switch (contentType) {
             case 'text':
               elements.fontWidth = this.fontWidth
-              // elements.style.fontSize="55px"
               elements.fontHeight = this.fontHeight
               elements.fontType = this.fontType
               elements.language = this.language
@@ -698,15 +707,15 @@
               break
 
             case 'barCode':
-              let parent = elements.getAttribute("parent");
-              if (parent==='template'){
-                let parentElement = elements.parentElement;
+              let parentElement = elements.parentElement;
+              let parent = parentElement.getAttribute("parent");
+              if (parent === 'template') {
                 parentElement.style.height = this.barCodeHeight + "px"
                 parentElement.style.lineHeight = this.barCodeHeight + "px"
               }
               elements.barCodeValuePosition = this.barCodeValuePosition
               elements.displayBarCodeValue = this.displayBarCodeValue
-              elements.style.height=this.barCodeHeight+"px"
+              elements.style.height = this.barCodeHeight + "px"
               elements.barCodeWidth = this.barCodeWidth
               elements.barCodeHeight = this.barCodeHeight
               elements.barCodeType = this.barCodeType
@@ -719,7 +728,7 @@
                   textPosition: (function (e) {
                     if (e === 'above') {
                       return 'top'
-                    }else {
+                    } else {
                       return 'bottom'
                     }
                   })(this.barCodeValuePosition)
@@ -816,19 +825,21 @@
             element['type'] = contentType
             element['valueName'] = item.valueName
             element['exampleData'] = item.exampleData
+            element['lineHeight'] = item.lineHeight;
+
             element['parent'] = parent
-
-
             let attr = {}
-
             switch (contentType) {
               case 'text':
                 attr['x'] = item.horizenPosition
-                attr['y'] = item.verticalPosition
+                if (parent === 'area') {
+                  attr['y'] = item.verticalPosition
+                }
                 attr['width'] = item.fontWidth
                 attr['height'] = item.fontHeight
                 attr['lang'] = item.language
                 attr['align'] = 'left'
+                attr['font'] = 'font_a'
                 attr['list'] = false
                 let str = item.exampleData;
                 if (!str || str === 'undefind') {
@@ -885,7 +896,7 @@
         console.log(elements)
 
         this.$http.post(
-          "http://localhost:7538/print",
+          "http://localhost/template/post",
           {
             id: "1",
             templateName: "template_name_1",
