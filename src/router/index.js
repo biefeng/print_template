@@ -8,6 +8,9 @@ import testKeydown from '@/components/testKeydown'
 import draggable from '@/components/draggable'
 import toolBar from '@/components/toolBar'
 
+import tree from '@/components/tree'
+
+
 import sortable from '@/components/sortable'
 
 Vue.use(Router)
@@ -48,6 +51,10 @@ export default new Router({
       path: '/',
       name: 'edit',
       component: edit
+    }, {
+      path: '/tree',
+      name: "tree",
+      component: tree
     }
   ]
 })
